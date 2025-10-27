@@ -1,0 +1,14 @@
+/frontend
+/docs
+/backend/vendor
+/backend/.env
+/backend/composer.lock
+/backend/composer.phar
+
+
+create-download-package.sh
+DOWNLOAD-INSTRUCTIONS.md
+INSTALLATION-GUIDE.md
+README.md
+INDIAN-CONSULAR-SERVICES-PHP-COMPLETE.zip
+DEPLOYMENT-GUIDE.md
