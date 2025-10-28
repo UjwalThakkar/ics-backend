@@ -66,6 +66,46 @@ class Application extends BaseModel
     }
 
     /**
+     * Count applications with same filters as getApplicationsWithFilters
+     */
+    public function countWithFilters(array $filters = []): int
+    {
+        $sql = "SELECT COUNT(*) FROM applications a WHERE 1=1";
+        $params = [];
+
+        if (!empty($filters['status'])) {
+            $sql .= " AND a.status = ?";
+            $params[] = $filters['status'];
+        }
+
+        if (!empty($filters['service_id'])) {
+            $sql .= " AND a.service_id = ?";
+            $params[] = $filters['service_id'];
+        }
+
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND a.submitted_at >= ?";
+            $params[] = $filters['date_from'];
+        }
+
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND a.submitted_at <= ?";
+            $params[] = $filters['date_to'];
+        }
+
+        if (!empty($filters['search'])) {
+            $searchTerm = '%' . $filters['search'] . '%';
+            $sql .= " AND (a.application_id LIKE ? OR JSON_EXTRACT(a.applicant_info, '$.firstName') LIKE ? OR JSON_EXTRACT(a.applicant_info, '$.lastName') LIKE ?)";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+
+        $stmt = $this->query($sql, $params);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * Update application status
      */
     public function updateStatus(string $applicationId, string $status, array $updateData = []): bool

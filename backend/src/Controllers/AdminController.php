@@ -40,11 +40,13 @@ class AdminController extends BaseController
         if (!$admin) {
             return $this->error('Unauthorized', 401);
         }
+        error_log('Admin data: ' . print_r($admin, true));
 
+        
         try {
             // Log admin activity
             $this->logService->logAdminActivity(
-                $admin['admin_id'],
+                $admin['id'],
                 'VIEW_DASHBOARD',
                 [],
                 $this->getClientIp(),
@@ -87,11 +89,11 @@ class AdminController extends BaseController
             ];
 
             $applications = $this->applicationModel->getApplicationsWithFilters($filters, $limit, $offset);
-            $total = $this->applicationModel->count($filters);
+            $total = $this->applicationModel->countWithFilters($filters);
 
             // Log admin activity
             $this->logService->logAdminActivity(
-                $admin['admin_id'],
+                $admin['id'],
                 'VIEW_APPLICATIONS',
                 ['page' => $page, 'limit' => $limit, 'filters' => $filters],
                 $this->getClientIp(),
@@ -166,7 +168,7 @@ class AdminController extends BaseController
 
                 // Log admin activity
                 $this->logService->logAdminActivity(
-                    $admin['admin_id'],
+                    $admin['id'],
                     'UPDATE_APPLICATION',
                     ['application_id' => $applicationId, 'updates' => $updateData],
                     $this->getClientIp(),
@@ -212,7 +214,7 @@ class AdminController extends BaseController
             if ($success) {
                 // Log admin activity
                 $this->logService->logAdminActivity(
-                    $admin['admin_id'],
+                    $admin['id'],
                     'DELETE_APPLICATION',
                     ['application_id' => $applicationId],
                     $this->getClientIp(),
@@ -268,7 +270,7 @@ class AdminController extends BaseController
                 'status' => 'confirmed',
                 'notes' => $data['notes'] ?? '',
                 'assigned_officer' => $data['assignedOfficer'] ?? $admin['username'],
-                'created_by' => $admin['admin_id'],
+                'created_by' => $admin['id'],
                 'booking_type' => 'manual',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
@@ -290,7 +292,7 @@ class AdminController extends BaseController
 
             // Log admin activity
             $this->logService->logAdminActivity(
-                $admin['admin_id'],
+                $admin['id'],
                 'CREATE_APPOINTMENT',
                 ['appointment_id' => $appointmentId, 'booking_type' => 'manual'],
                 $this->getClientIp(),
@@ -363,7 +365,7 @@ class AdminController extends BaseController
         try {
             $backupData = [
                 'timestamp' => date('Y-m-d H:i:s'),
-                'created_by' => $admin['admin_id'],
+                'created_by' => $admin['id'],
                 'version' => '1.0',
                 'data' => [
                     'applications' => $this->applicationModel->findAll(),
@@ -376,7 +378,7 @@ class AdminController extends BaseController
 
             // Log backup activity
             $this->logService->logAdminActivity(
-                $admin['admin_id'],
+                $admin['id'],
                 'CREATE_BACKUP',
                 ['backup_size' => count($backupData['data'], COUNT_RECURSIVE)],
                 $this->getClientIp(),
