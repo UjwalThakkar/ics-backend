@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace IndianConsular\Services;
 
-use IndianConsular\Controllers\ApplicationController;
-use IndianConsular\Controllers\AdminController;
 use IndianConsular\Controllers\AuthController;
+use IndianConsular\Controllers\BookingController;
 use IndianConsular\Controllers\AppointmentController;
 use IndianConsular\Controllers\ServiceController;
-use IndianConsular\Controllers\FileController;
+use IndianConsular\Controllers\VerificationCenterController;
+use IndianConsular\Controllers\AdminController;
 
 class Router
 {
@@ -18,58 +18,111 @@ class Router
     public function __construct()
     {
         $this->routes = [
-            // Authentication routes
+            // =============================================
+            // AUTHENTICATION ROUTES
+            // =============================================
             'POST /auth/login' => [AuthController::class, 'login'],
             'POST /auth/register' => [AuthController::class, 'register'],
             'POST /auth/logout' => [AuthController::class, 'logout'],
             'GET /auth/me' => [AuthController::class, 'me'],
+            'PUT /auth/profile' => [AuthController::class, 'updateProfile'],
+            'POST /auth/change-password' => [AuthController::class, 'changePassword'],
+            'POST /auth/verify-email' => [AuthController::class, 'verifyEmail'],
 
-            // Public application routes
-            'POST /applications/submit' => [ApplicationController::class, 'submit'],
-            'GET /applications/track/{id}' => [ApplicationController::class, 'track'],
+            // =============================================
+            // BOOKING FLOW ROUTES (Public & Authenticated)
+            // =============================================
+            // Step 1: Get services
+            'GET /booking/services' => [BookingController::class, 'getServices'],
+            
+            // Step 2: Get centers for service
+            'GET /booking/centers/{serviceId}' => [BookingController::class, 'getCentersForService'],
+            
+            // Step 3: Get user details (authenticated)
+            'GET /booking/user-details' => [BookingController::class, 'getUserDetails'],
+            
+            // Step 4: Get available dates
+            'GET /booking/available-dates' => [BookingController::class, 'getAvailableDates'],
+            
+            // Step 5: Get available slots
+            'GET /booking/available-slots' => [BookingController::class, 'getAvailableSlots'],
+            
+            // Step 6: Create booking (authenticated)
+            'POST /booking/create' => [BookingController::class, 'createBooking'],
+            
+            // Step 7: Get confirmation (authenticated)
+            'GET /booking/confirmation/{bookingId}' => [BookingController::class, 'getConfirmation'],
+            
+            // My bookings (authenticated)
+            'GET /booking/my-bookings' => [BookingController::class, 'getMyBookings'],
+            
+            // Cancel booking (authenticated)
+            'POST /booking/cancel/{bookingId}' => [BookingController::class, 'cancelBooking'],
+            
+            // Booking settings
+            'GET /booking/settings' => [BookingController::class, 'getSettings'],
 
-            // Public service routes
+            // =============================================
+            // PUBLIC SERVICE ROUTES
+            // =============================================
             'GET /services' => [ServiceController::class, 'list'],
+            'GET /services/categories' => [ServiceController::class, 'categories'],
+            'GET /services/search' => [ServiceController::class, 'search'],
+            'GET /services/category/{category}' => [ServiceController::class, 'byCategory'],
             'GET /services/{id}' => [ServiceController::class, 'get'],
 
-            // Public appointment routes
-            'POST /appointments/book' => [AppointmentController::class, 'book'],
-            'GET /appointments/availability' => [AppointmentController::class, 'availability'],
+            // =============================================
+            // VERIFICATION CENTERS ROUTES (Public)
+            // =============================================
+            'GET /centers' => [VerificationCenterController::class, 'list'],
+            'GET /centers/{id}' => [VerificationCenterController::class, 'get'],
+            'GET /centers/{id}/services' => [VerificationCenterController::class, 'getCenterServices'],
+            'GET /centers/city/{city}' => [VerificationCenterController::class, 'getByCity'],
+            'GET /centers/country/{country}' => [VerificationCenterController::class, 'getByCountry'],
+            'GET /centers/nearby' => [VerificationCenterController::class, 'searchNearby'],
+            'GET /centers/{id}/available-slots' => [VerificationCenterController::class, 'getAvailableSlots'],
 
-            // File upload routes
-            'POST /upload/secure' => [FileController::class, 'upload'],
+            // =============================================
+            // USER APPOINTMENT ROUTES (Authenticated)
+            // =============================================
+            'GET /appointments' => [AppointmentController::class, 'getMyAppointments'],
+            'GET /appointments/{id}' => [AppointmentController::class, 'getAppointment'],
+            'POST /appointments/{id}/cancel' => [AppointmentController::class, 'cancelAppointment'],
+            'GET /appointments/stats' => [AppointmentController::class, 'getStats'],
 
-            // Admin routes (require authentication)
-            'GET /admin/dashboard/stats' => [AdminController::class, 'stats'],
-            'GET /admin/applications' => [AdminController::class, 'getApplications'],
-            'PUT /admin/applications/{id}' => [AdminController::class, 'updateApplication'],
-            'DELETE /admin/applications/{id}' => [AdminController::class, 'deleteApplication'],
-            'POST /admin/applications/bulk-update' => [AdminController::class, 'bulkUpdateApplications'],
-
-            'GET /admin/appointments' => [AdminController::class, 'getAppointments'],
-            'POST /admin/appointments' => [AdminController::class, 'createAppointment'],
-            'PUT /admin/appointments/{id}' => [AdminController::class, 'updateAppointment'],
-            'DELETE /admin/appointments/{id}' => [AdminController::class, 'deleteAppointment'],
-            'POST /admin/appointments/bulk-create' => [AdminController::class, 'bulkCreateAppointments'],
-
-            'GET /admin/users' => [AdminController::class, 'getUsers'],
-            'POST /admin/users' => [AdminController::class, 'createUser'],
-            'PUT /admin/users/{id}' => [AdminController::class, 'updateUser'],
-            'DELETE /admin/users/{id}' => [AdminController::class, 'deleteUser'],
-
-            'GET /admin/services' => [AdminController::class, 'getServices'],
-            'POST /admin/services' => [AdminController::class, 'createService'],
-            'PUT /admin/services/{id}' => [AdminController::class, 'updateService'],
-            'DELETE /admin/services/{id}' => [AdminController::class, 'deleteService'],
-
-            'GET /admin/analytics' => [AdminController::class, 'analytics'],
-            'POST /admin/backup' => [AdminController::class, 'backup'],
+            // =============================================
+            // ADMIN DASHBOARD ROUTES
+            // =============================================
+            'GET /admin/stats' => [AdminController::class, 'stats'],
             'GET /admin/system/status' => [AdminController::class, 'systemStatus'],
+            'POST /admin/backup' => [AdminController::class, 'backup'],
 
-            // Notification routes
-            'POST /admin/notifications/send' => [AdminController::class, 'sendNotification'],
-            'GET /admin/notifications/templates' => [AdminController::class, 'getNotificationTemplates'],
-            'POST /admin/notifications/templates' => [AdminController::class, 'createNotificationTemplate'],
+            // =============================================
+            // ADMIN SERVICE ROUTES
+            // =============================================
+            'GET /admin/services' => [ServiceController::class, 'adminList'],
+            'POST /admin/services' => [ServiceController::class, 'create'],
+            'PUT /admin/services/{id}' => [ServiceController::class, 'update'],
+            'DELETE /admin/services/{id}' => [ServiceController::class, 'delete'],
+            'POST /admin/services/{id}/toggle' => [ServiceController::class, 'toggleActive'],
+
+            // =============================================
+            // ADMIN CENTER ROUTES
+            // =============================================
+            'GET /admin/centers' => [VerificationCenterController::class, 'adminList'],
+            'POST /admin/centers' => [VerificationCenterController::class, 'create'],
+            'PUT /admin/centers/{id}' => [VerificationCenterController::class, 'update'],
+            'POST /admin/centers/{id}/toggle' => [VerificationCenterController::class, 'toggleActive'],
+
+            // =============================================
+            // ADMIN APPOINTMENT ROUTES
+            // =============================================
+            'GET /admin/appointments' => [AppointmentController::class, 'adminList'],
+            'GET /admin/appointments/{id}' => [AppointmentController::class, 'adminGetAppointment'],
+            'PUT /admin/appointments/{id}/status' => [AppointmentController::class, 'updateStatus'],
+            'GET /admin/appointments/stats' => [AppointmentController::class, 'adminGetStats'],
+            'GET /admin/appointments/upcoming' => [AppointmentController::class, 'getUpcoming'],
+            'GET /admin/appointments/date-range' => [AppointmentController::class, 'getByDateRange'],
         ];
     }
 
@@ -147,6 +200,9 @@ class Router
             return $controller->$method($requestData, $params);
 
         } catch (\Exception $e) {
+            error_log("Controller error: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            
             return [
                 'status' => 500,
                 'data' => [
@@ -188,5 +244,34 @@ class Router
         }
 
         return $data;
+    }
+
+    /**
+     * Get all registered routes (for documentation/debugging)
+     */
+    public function getRoutes(): array
+    {
+        return array_keys($this->routes);
+    }
+
+    /**
+     * Check if route exists
+     */
+    public function routeExists(string $method, string $path): bool
+    {
+        $path = trim($path, '/');
+        $routeKey = "{$method} /{$path}";
+        
+        if (isset($this->routes[$routeKey])) {
+            return true;
+        }
+
+        foreach ($this->routes as $pattern => $handler) {
+            if ($this->matchRoute($method, $path, $pattern, $params)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

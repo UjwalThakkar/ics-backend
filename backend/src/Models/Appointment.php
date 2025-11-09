@@ -4,191 +4,356 @@ declare(strict_types=1);
 
 namespace IndianConsular\Models;
 
-class Appointment extends BaseModel
+class Service extends BaseModel
 {
-    protected string $table = 'appointments';
-    protected string $primaryKey = 'id';
+    protected string $table = 'service';
+    protected string $primaryKey = 'service_id';
 
     /**
-     * Find appointment by appointment_id (unique identifier)
+     * Find service by service_id
      */
-    public function findByAppointmentId(string $appointmentId): ?array
+    public function findByServiceId(int $serviceId): ?array
     {
-        return $this->findBy('appointment_id', $appointmentId);
+        $service = $this->find($serviceId);
+        
+        if ($service) {
+            // Decode JSON fields
+            if (isset($service['fees'])) {
+                $service['fees'] = json_decode($service['fees'], true);
+            }
+            if (isset($service['required_documents'])) {
+                $service['required_documents'] = json_decode($service['required_documents'], true);
+            }
+            if (isset($service['eligibility_requirements'])) {
+                $service['eligibility_requirements'] = json_decode($service['eligibility_requirements'], true);
+            }
+        }
+
+        return $service;
     }
 
     /**
-     * Find appointments by application_id
+     * Get all active services
      */
-    public function findByApplicationId(string $applicationId): array
+    public function getActiveServices(): array
     {
-        return $this->findAll(['application_id' => $applicationId], 'appointment_date DESC');
+        $services = $this->findAll(['is_active' => 1], 'display_order ASC, category ASC, title ASC');
+        
+        // Decode JSON fields
+        foreach ($services as &$service) {
+            if (isset($service['fees'])) {
+                $service['fees'] = json_decode($service['fees'], true);
+            }
+            if (isset($service['required_documents'])) {
+                $service['required_documents'] = json_decode($service['required_documents'], true);
+            }
+            if (isset($service['eligibility_requirements'])) {
+                $service['eligibility_requirements'] = json_decode($service['eligibility_requirements'], true);
+            }
+        }
+
+        return $services;
     }
 
     /**
-     * Get appointments with filters (for admin panel)
+     * Get services by category
      */
-    public function getAppointmentsWithFilters(array $filters = [], int $limit = 50, int $offset = 0): array
+    public function getServicesByCategory(string $category): array
     {
-        $sql = "SELECT 
-                    a.*,
-                    s.title as service_title
-                FROM appointments a
-                LEFT JOIN services s ON a.service_type = s.service_id
-                WHERE 1=1";
+        $services = $this->findAll([
+            'category' => $category,
+            'is_active' => 1
+        ], 'display_order ASC, title ASC');
 
-        $params = [];
-
-        if (!empty($filters['status'])) {
-            $sql .= " AND a.status = ?";
-            $params[] = $filters['status'];
+        // Decode JSON fields
+        foreach ($services as &$service) {
+            if (isset($service['fees'])) {
+                $service['fees'] = json_decode($service['fees'], true);
+            }
+            if (isset($service['required_documents'])) {
+                $service['required_documents'] = json_decode($service['required_documents'], true);
+            }
+            if (isset($service['eligibility_requirements'])) {
+                $service['eligibility_requirements'] = json_decode($service['eligibility_requirements'], true);
+            }
         }
 
-        if (!empty($filters['service_type'])) {
-            $sql .= " AND a.service_type = ?";
-            $params[] = $filters['service_type'];
-        }
-
-        if (!empty($filters['application_id'])) {
-            $sql .= " AND a.application_id = ?";
-            $params[] = $filters['application_id'];
-        }
-
-        if (!empty($filters['date_from'])) {
-            $sql .= " AND a.appointment_date >= ?";
-            $params[] = $filters['date_from'];
-        }
-
-        if (!empty($filters['date_to'])) {
-            $sql .= " AND a.appointment_date <= ?";
-            $params[] = $filters['date_to'];
-        }
-
-        if (!empty($filters['search'])) {
-            $searchTerm = '%' . $filters['search'] . '%';
-            $sql .= " AND (
-                a.appointment_id LIKE ? OR
-                a.client_name LIKE ? OR
-                a.client_email LIKE ? OR
-                a.client_phone LIKE ?
-            )";
-            $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
-        }
-
-        $sql .= " ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT ? OFFSET ?";
-        $params[] = $limit;
-        $params[] = $offset;
-
-        $stmt = $this->query($sql, $params);
-        return $stmt->fetchAll();
+        return $services;
     }
 
     /**
-     * Get appointment statistics for admin dashboard
+     * Get all categories
      */
-    public function getStats(): array
+    public function getCategories(): array
     {
-        $stats = [];
-
-        // Total appointments
-        $stmt = $this->query("SELECT COUNT(*) as total FROM appointments");
-        $stats['total'] = (int)$stmt->fetch()['total'];
-
-        // By status
-        $stmt = $this->query("SELECT status, COUNT(*) as count FROM appointments GROUP BY status");
-        foreach ($stmt->fetchAll() as $row) {
-            $stats['status_' . $row['status']] = (int)$row['count'];
-        }
-
-        // Today's appointments
-        $stmt = $this->query("SELECT COUNT(*) as count FROM appointments WHERE DATE(appointment_date) = CURDATE()");
-        $stats['today'] = (int)$stmt->fetch()['count'];
-
-        // This week's upcoming
-        $stmt = $this->query("
-            SELECT COUNT(*) as count FROM appointments 
-            WHERE appointment_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-            AND status IN ('pending', 'confirmed')
-        ");
-        $stats['upcoming_week'] = (int)$stmt->fetch()['count'];
-
-        // By service type (top 5)
-        $stmt = $this->query("
-            SELECT service_type, COUNT(*) as count 
-            FROM appointments 
-            GROUP BY service_type 
-            ORDER BY count DESC 
-            LIMIT 5
-        ");
-        $stats['top_services'] = $stmt->fetchAll();
-
-        return $stats;
+        $stmt = $this->query("SELECT DISTINCT category FROM service WHERE is_active = 1 ORDER BY category");
+        return array_column($stmt->fetchAll(), 'category');
     }
 
     /**
-     * Check slot availability for a given date and optional service
+     * Get services grouped by category
      */
-    public function getAvailability(string $date, ?string $serviceType = null): array
+    public function getServicesGroupedByCategory(): array
     {
-        $sql = "SELECT appointment_time, duration_minutes, status, client_name 
-                FROM appointments 
-                WHERE appointment_date = ? AND status != 'cancelled'";
-        $params = [$date];
+        $services = $this->getActiveServices();
+        $grouped = [];
 
-        if ($serviceType) {
-            $sql .= " AND service_type = ?";
-            $params[] = $serviceType;
+        foreach ($services as $service) {
+            $category = $service['category'];
+            if (!isset($grouped[$category])) {
+                $grouped[$category] = [];
+            }
+            $grouped[$category][] = $service;
         }
 
-        $sql .= " ORDER BY appointment_time";
-
-        $stmt = $this->query($sql, $params);
-        return $stmt->fetchAll();
+        return $grouped;
     }
 
     /**
-     * Create new appointment
+     * Create new service
      */
-    public function createAppointment(array $data): int
+    public function createService(array $data): int
     {
-        $data['appointment_id'] = $this->generateAppointmentId();
-        $data['created_at'] = date('Y-m-d H:i:s');
-        $data['updated_at'] = date('Y-m-d H:i:s');
+        // Encode JSON fields
+        if (isset($data['fees']) && is_array($data['fees'])) {
+            $data['fees'] = json_encode($data['fees']);
+        }
+        if (isset($data['required_documents']) && is_array($data['required_documents'])) {
+            $data['required_documents'] = json_encode($data['required_documents']);
+        }
+        if (isset($data['eligibility_requirements']) && is_array($data['eligibility_requirements'])) {
+            $data['eligibility_requirements'] = json_encode($data['eligibility_requirements']);
+        }
 
         return $this->insert($data);
     }
 
     /**
-     * Update appointment
+     * Update service
      */
-    public function updateAppointment(string $appointmentId, array $data): bool
+    public function updateService(int $serviceId, array $data): bool
     {
-        $data['updated_at'] = date('Y-m-d H:i:s');
-        return $this->updateBy('appointment_id', $appointmentId, $data);
+        // Encode JSON fields if they are arrays
+        if (isset($data['fees']) && is_array($data['fees'])) {
+            $data['fees'] = json_encode($data['fees']);
+        }
+        if (isset($data['required_documents']) && is_array($data['required_documents'])) {
+            $data['required_documents'] = json_encode($data['required_documents']);
+        }
+        if (isset($data['eligibility_requirements']) && is_array($data['eligibility_requirements'])) {
+            $data['eligibility_requirements'] = json_encode($data['eligibility_requirements']);
+        }
+
+        $updateFields = [];
+        $params = [];
+
+        $allowedFields = [
+            'category', 'title', 'description', 'processing_time',
+            'fees', 'required_documents', 'eligibility_requirements',
+            'is_active', 'display_order'
+        ];
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $updateFields[] = "$field = ?";
+                $params[] = $data[$field];
+            }
+        }
+
+        if (empty($updateFields)) {
+            return true;
+        }
+
+        $params[] = $serviceId;
+        $sql = "UPDATE service SET " . implode(', ', $updateFields) . ", updated_at = NOW() WHERE service_id = ?";
+        $stmt = $this->query($sql, $params);
+
+        return $stmt->rowCount() > 0;
     }
 
     /**
-     * Generate unique appointment_id like APP-2025-0001
+     * Activate/Deactivate service
      */
-    private function generateAppointmentId(): string
+    public function toggleActive(int $serviceId, bool $isActive): bool
     {
-        $year = date('Y');
-        $prefix = "APP-{$year}-";
+        $sql = "UPDATE service SET is_active = ?, updated_at = NOW() WHERE service_id = ?";
+        $stmt = $this->query($sql, [$isActive ? 1 : 0, $serviceId]);
+        return $stmt->rowCount() > 0;
+    }
 
+    /**
+     * Update display order
+     */
+    public function updateDisplayOrder(int $serviceId, int $displayOrder): bool
+    {
+        $sql = "UPDATE service SET display_order = ?, updated_at = NOW() WHERE service_id = ?";
+        $stmt = $this->query($sql, [$displayOrder, $serviceId]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Get service statistics
+     */
+    public function getServiceStats(): array
+    {
+        $stats = [];
+
+        // Total services
+        $stmt = $this->query("SELECT COUNT(*) as total FROM service");
+        $stats['total'] = (int)$stmt->fetch()['total'];
+
+        // Active services
+        $stmt = $this->query("SELECT COUNT(*) as count FROM service WHERE is_active = 1");
+        $stats['active'] = (int)$stmt->fetch()['count'];
+
+        // By category
+        $stmt = $this->query("SELECT category, COUNT(*) as count FROM service WHERE is_active = 1 GROUP BY category ORDER BY count DESC");
+        $stats['by_category'] = $stmt->fetchAll();
+
+        // Most booked services (based on appointments)
         $stmt = $this->query("
-            SELECT appointment_id FROM appointments 
-            WHERE appointment_id LIKE ? 
-            ORDER BY appointment_id DESC LIMIT 1
-        ", ["{$prefix}%"]);
+            SELECT 
+                s.service_id,
+                s.title,
+                s.category,
+                COUNT(a.appointment_id) as booking_count
+            FROM service s
+            LEFT JOIN appointment a ON s.service_id = a.booked_for_service
+            WHERE s.is_active = 1
+            GROUP BY s.service_id
+            ORDER BY booking_count DESC
+            LIMIT 10
+        ");
+        $stats['most_booked'] = $stmt->fetchAll();
 
-        $last = $stmt->fetch();
-        if ($last) {
-            $lastNum = (int)substr($last['appointment_id'], strlen($prefix));
-            $nextNum = $lastNum + 1;
-        } else {
-            $nextNum = 1;
+        return $stats;
+    }
+
+    /**
+     * Get service with appointment count
+     */
+    public function getServiceWithBookingCount(int $serviceId): ?array
+    {
+        $sql = "SELECT 
+                    s.*,
+                    COUNT(a.appointment_id) as total_bookings,
+                    SUM(CASE WHEN a.appointment_status = 'completed' THEN 1 ELSE 0 END) as completed_bookings,
+                    SUM(CASE WHEN a.appointment_status = 'scheduled' THEN 1 ELSE 0 END) as scheduled_bookings
+                FROM service s
+                LEFT JOIN appointment a ON s.service_id = a.booked_for_service
+                WHERE s.service_id = ?
+                GROUP BY s.service_id";
+        
+        $stmt = $this->query($sql, [$serviceId]);
+        $service = $stmt->fetch();
+
+        if ($service) {
+            // Decode JSON fields
+            if (isset($service['fees'])) {
+                $service['fees'] = json_decode($service['fees'], true);
+            }
+            if (isset($service['required_documents'])) {
+                $service['required_documents'] = json_decode($service['required_documents'], true);
+            }
+            if (isset($service['eligibility_requirements'])) {
+                $service['eligibility_requirements'] = json_decode($service['eligibility_requirements'], true);
+            }
         }
 
-        return $prefix . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
+        return $service ?: null;
+    }
+
+    /**
+     * Get centers offering a specific service
+     */
+    public function getCentersOfferingService(int $serviceId): array
+    {
+        $sql = "SELECT 
+                    vc.*,
+                    COUNT(c.counter_id) as counter_count
+                FROM verification_center vc
+                LEFT JOIN counter c ON vc.center_id = c.center_id AND c.is_active = 1
+                WHERE vc.is_active = 1
+                AND JSON_CONTAINS(vc.provides_services, ?, '$')
+                GROUP BY vc.center_id
+                ORDER BY vc.display_order ASC, vc.name ASC";
+
+        $stmt = $this->query($sql, [json_encode($serviceId)]);
+        $centers = $stmt->fetchAll();
+
+        // Decode JSON fields
+        foreach ($centers as &$center) {
+            if (isset($center['operating_hours'])) {
+                $center['operating_hours'] = json_decode($center['operating_hours'], true);
+            }
+            if (isset($center['provides_services'])) {
+                $center['provides_services'] = json_decode($center['provides_services'], true);
+            }
+            if (isset($center['has_counters'])) {
+                $center['has_counters'] = json_decode($center['has_counters'], true);
+            }
+        }
+
+        return $centers;
+    }
+
+    /**
+     * Search services
+     */
+    public function searchServices(string $searchTerm): array
+    {
+        $searchPattern = '%' . $searchTerm . '%';
+        $sql = "SELECT * FROM service 
+                WHERE is_active = 1
+                AND (title LIKE ? OR description LIKE ? OR category LIKE ?)
+                ORDER BY display_order ASC, title ASC";
+        
+        $stmt = $this->query($sql, [$searchPattern, $searchPattern, $searchPattern]);
+        $services = $stmt->fetchAll();
+
+        // Decode JSON fields
+        foreach ($services as &$service) {
+            if (isset($service['fees'])) {
+                $service['fees'] = json_decode($service['fees'], true);
+            }
+            if (isset($service['required_documents'])) {
+                $service['required_documents'] = json_decode($service['required_documents'], true);
+            }
+            if (isset($service['eligibility_requirements'])) {
+                $service['eligibility_requirements'] = json_decode($service['eligibility_requirements'], true);
+            }
+        }
+
+        return $services;
+    }
+
+    /**
+     * Calculate service fees
+     */
+    public function calculateFees(int $serviceId, ?string $feeType = 'standard'): ?array
+    {
+        $service = $this->findByServiceId($serviceId);
+        
+        if (!$service || !isset($service['fees'])) {
+            return null;
+        }
+
+        $fees = $service['fees'];
+        
+        // If fees is a simple object with amounts
+        if (isset($fees[$feeType])) {
+            return [
+                'type' => $feeType,
+                'amount' => $fees[$feeType],
+                'currency' => 'USD'
+            ];
+        }
+
+        // If fees is an array of fee objects
+        if (is_array($fees) && isset($fees[0])) {
+            return $fees[0];
+        }
+
+        return null;
     }
 }

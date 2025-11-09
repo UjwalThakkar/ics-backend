@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace IndianConsular\Services;
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
 use IndianConsular\Models\Notification;
 
 class NotificationService
@@ -33,7 +32,11 @@ class NotificationService
     public function sendApplicationSubmitted(string $applicationId, string $email, string $name, string $serviceType): bool
     {
         $subject = 'Application Submitted Successfully';
-        $content = "Dear {$name},\n\nYour application ({$applicationId}) for {$serviceType} has been submitted successfully.\n\nWe will process your application and notify you of any updates.\n\nBest regards,\nIndian Consular Services";
+        $content = "Dear {$name},\n\n";
+        $content .= "Your application ({$applicationId}) for {$serviceType} has been submitted successfully.\n\n";
+        $content .= "We will process your application and notify you of any updates.\n\n";
+        $content .= "You can track your application status using your application ID: {$applicationId}\n\n";
+        $content .= "Best regards,\nIndian Consular Services";
 
         return $this->sendEmail($email, $subject, $content, 'app_submitted', $applicationId);
     }
@@ -41,19 +44,166 @@ class NotificationService
     /**
      * Send appointment confirmation
      */
-    public function sendAppointmentConfirmed(string $appointmentId, string $email, string $name, string $date, string $time, string $serviceType): bool
-    {
+    public function sendAppointmentConfirmation(
+        string $appointmentId,
+        string $email,
+        string $name,
+        string $centerName,
+        string $counterNumber,
+        string $date,
+        string $time,
+        string $serviceType
+    ): bool {
         $subject = 'Appointment Confirmation';
-        $content = "Dear {$name},\n\nYour appointment ({$appointmentId}) has been confirmed:\n\nService: {$serviceType}\nDate: {$date}\nTime: {$time}\n\nPlease arrive 15 minutes before your appointment time.\n\nBest regards,\nIndian Consular Services";
+        
+        $content = "Dear {$name},\n\n";
+        $content .= "Your appointment has been confirmed!\n\n";
+        $content .= "Appointment Details:\n";
+        $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $content .= "Appointment ID: {$appointmentId}\n";
+        $content .= "Service: {$serviceType}\n";
+        $content .= "Date: {$date}\n";
+        $content .= "Time: {$time}\n";
+        $content .= "Location: {$centerName}\n";
+        $content .= "Counter: {$counterNumber}\n";
+        $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $content .= "Important Instructions:\n";
+        $content .= "• Please arrive 15 minutes before your appointment time\n";
+        $content .= "• Bring all required documents\n";
+        $content .= "• Bring a printed copy of this confirmation or your appointment ID\n";
+        $content .= "• Wear appropriate attire for photo/biometric services\n\n";
+        $content .= "To cancel or reschedule, please login to your account.\n\n";
+        $content .= "Best regards,\nIndian Consular Services";
 
         return $this->sendEmail($email, $subject, $content, 'appointment_confirmed', null, $appointmentId);
     }
 
     /**
+     * Send appointment cancellation
+     */
+    public function sendAppointmentCancellation(
+        string $appointmentId,
+        string $email,
+        string $name,
+        string $date,
+        string $time
+    ): bool {
+        $subject = 'Appointment Cancelled';
+        
+        $content = "Dear {$name},\n\n";
+        $content .= "Your appointment on {$date} at {$time} has been cancelled.\n\n";
+        $content .= "Appointment ID: {$appointmentId}\n\n";
+        $content .= "If you wish to book a new appointment, please visit our website.\n\n";
+        $content .= "Best regards,\nIndian Consular Services";
+
+        return $this->sendEmail($email, $subject, $content, 'appointment_cancelled', null, $appointmentId);
+    }
+
+    /**
+     * Send appointment rescheduled notification
+     */
+    public function sendAppointmentRescheduled(
+        string $appointmentId,
+        string $email,
+        string $name,
+        string $newDate,
+        string $newTime,
+        string $centerName
+    ): bool {
+        $subject = 'Appointment Rescheduled';
+        
+        $content = "Dear {$name},\n\n";
+        $content .= "Your appointment has been rescheduled.\n\n";
+        $content .= "New Appointment Details:\n";
+        $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $content .= "Appointment ID: {$appointmentId}\n";
+        $content .= "Date: {$newDate}\n";
+        $content .= "Time: {$newTime}\n";
+        $content .= "Location: {$centerName}\n";
+        $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $content .= "Please arrive 15 minutes before your appointment time.\n\n";
+        $content .= "Best regards,\nIndian Consular Services";
+
+        return $this->sendEmail($email, $subject, $content, 'appointment_rescheduled', null, $appointmentId);
+    }
+
+    /**
+     * Send appointment reminder (to be run daily for next day appointments)
+     */
+    public function sendAppointmentReminder(
+        string $appointmentId,
+        string $email,
+        string $name,
+        string $date,
+        string $time,
+        string $centerName,
+        string $counterNumber
+    ): bool {
+        $subject = 'Appointment Reminder - Tomorrow';
+        
+        $content = "Dear {$name},\n\n";
+        $content .= "This is a reminder for your appointment tomorrow.\n\n";
+        $content .= "Appointment Details:\n";
+        $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $content .= "Appointment ID: {$appointmentId}\n";
+        $content .= "Date: {$date}\n";
+        $content .= "Time: {$time}\n";
+        $content .= "Location: {$centerName}\n";
+        $content .= "Counter: {$counterNumber}\n";
+        $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        $content .= "Important Reminders:\n";
+        $content .= "• Arrive 15 minutes early\n";
+        $content .= "• Bring all required documents\n";
+        $content .= "• Bring your appointment confirmation\n\n";
+        $content .= "We look forward to seeing you tomorrow!\n\n";
+        $content .= "Best regards,\nIndian Consular Services";
+
+        return $this->sendEmail($email, $subject, $content, 'appointment_reminder', null, $appointmentId);
+    }
+
+    /**
+     * Send application status update
+     */
+    public function sendApplicationStatusUpdate(
+        string $applicationId,
+        string $email,
+        string $name,
+        string $newStatus
+    ): bool {
+        $subject = 'Application Status Update';
+        
+        $statusMessages = [
+            'under-review' => 'Your application is now under review by our officers.',
+            'in-progress' => 'Your application is being processed.',
+            'ready-for-collection' => 'Your documents are ready for collection! Please visit the consulate during office hours.',
+            'completed' => 'Your application has been completed successfully!',
+            'rejected' => 'Unfortunately, your application has been rejected. Please contact us for more details.'
+        ];
+
+        $statusMessage = $statusMessages[$newStatus] ?? 'Your application status has been updated.';
+
+        $content = "Dear {$name},\n\n";
+        $content .= "Your application status has been updated.\n\n";
+        $content .= "Application ID: {$applicationId}\n";
+        $content .= "New Status: " . ucwords(str_replace('-', ' ', $newStatus)) . "\n\n";
+        $content .= $statusMessage . "\n\n";
+        $content .= "You can track your application status anytime using your application ID.\n\n";
+        $content .= "Best regards,\nIndian Consular Services";
+
+        return $this->sendEmail($email, $subject, $content, 'app_status_update', $applicationId);
+    }
+
+    /**
      * Send email notification
      */
-    public function sendEmail(string $email, string $subject, string $content, string $templateId = '', string $applicationId = null, string $appointmentId = null): bool
-    {
+    private function sendEmail(
+        string $email,
+        string $subject,
+        string $content,
+        string $templateId = '',
+        ?string $applicationId = null,
+        ?string $appointmentId = null
+    ): bool {
         try {
             // Create notification record
             $notificationId = $this->generateNotificationId();
@@ -94,9 +244,8 @@ class NotificationService
     private function sendMailWithPHPMailer(string $email, string $subject, string $content): bool
     {
         if (empty($this->mailConfig['username']) || empty($this->mailConfig['password'])) {
-            // Skip email sending if not configured
             error_log("Email not configured, skipping send to: {$email}");
-            return true; // Return true to not fail the application flow
+            return true;
         }
 
         try {

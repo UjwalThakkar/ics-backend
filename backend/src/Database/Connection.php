@@ -18,7 +18,8 @@ class Connection
             try {
                 $host = $_ENV['DB_HOST'] ?? 'localhost';
                 $port = $_ENV['DB_PORT'] ?? '3306';
-                $dbname = $_ENV['DB_NAME'] ?? 'indian_consular_services';
+                // $dbname = $_ENV['DB_NAME'] ?? 'indian_consular_services2';
+                $dbname = $_ENV['DB_NAME'] ?? 'ics_test_db';
                 $username = $_ENV['DB_USER'] ?? 'root';
                 $password = $_ENV['DB_PASS'] ?? '';
 
