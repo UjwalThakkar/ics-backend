@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace IndianConsular\Controllers;
 
 use IndianConsular\Models\User;
+use IndianConsular\Models\AdminUser;
 
 class AuthController extends BaseController
 {
     private User $userModel;
+    private AdminUser $adminUserModel;
 
     public function __construct()
     {
         parent::__construct();
         $this->userModel = new User();
+        $this->adminUserModel = new AdminUser();
     }
 
     /**
@@ -83,7 +86,6 @@ class AuthController extends BaseController
                 'emailValidated' => (bool)$user['email_validated'],
                 'message' => 'User registered successfully. Please verify your email to complete registration.'
             ], 201);
-
         } catch (\Exception $e) {
             // Log failed registration attempt
             $this->logService->logUserActivity(
@@ -108,72 +110,197 @@ class AuthController extends BaseController
         $data = $this->sanitize($data);
 
         // Validate required fields
-        $missing = $this->validateRequired($data, ['email', 'password']);
+        $missing = $this->validateRequired($data, ['email', 'password', 'type']);
         if (!empty($missing)) {
             return $this->error('Missing required fields: ' . implode(', ', $missing), 400);
         }
 
+        $type = strtolower($data['type']);
+        if (!in_array($type, ['admin', 'user'])) {
+            return $this->error('Invalid login type. Must be "admin" or "user".', 400);
+        }
+
+
         try {
-            // Verify credentials
-            $user = $this->userModel->verifyCredentials($data['email'], $data['password']);
 
-            if (!$user) {
-                // Log failed login attempt
-                $this->logService->logUserActivity(
-                    'UNKNOWN',
-                    'USER_LOGIN_FAILED',
-                    ['email' => $data['email'], 'reason' => 'invalid_credentials'],
-                    $this->getClientIp(),
-                    $this->getUserAgent()
-                );
-
-                return $this->error('Invalid email or password', 401);
+            if ($type === 'admin') {
+                return $this->adminLogin($data);
+            } else {
+                return $this->userLogin($data);
             }
-
-            // Generate JWT token
-            $tokenData = [
-                'id' => $user['user_id'],
-                'type' => 'user',
-                'email' => $user['email'],
-                'firstName' => $user['first_name'],
-                'lastName' => $user['last_name']
-            ];
-
-            $token = $this->authService->generateToken($tokenData);
-
-            // Log successful login
-            $this->logService->logUserActivity(
-                (string)$user['user_id'],
-                'USER_LOGIN_SUCCESS',
-                ['method' => 'password'],
-                $this->getClientIp(),
-                $this->getUserAgent()
-            );
-
-            return $this->success([
-                'token' => $token,
-                'type' => 'user',
-                'user' => [
-                    'userId' => $user['user_id'],
-                    'email' => $user['email'],
-                    'firstName' => $user['first_name'],
-                    'lastName' => $user['last_name'],
-                    'phoneNo' => $user['phone_no'],
-                    'gender' => $user['gender'],
-                    'dateOfBirth' => $user['date_of_birth'],
-                    'nationality' => $user['nationality'],
-                    'passportNo' => $user['passport_no'],
-                    'passportExpiry' => $user['passport_expiry'],
-                    'accountStatus' => $user['account_status'],
-                    'emailValidated' => (bool)$user['email_validated']
-                ]
-            ]);
-
         } catch (\Exception $e) {
             error_log("Login error: " . $e->getMessage());
             return $this->error('Login failed', 500);
         }
     }
+
+    private function adminLogin(array $data): array
+    {
+        $admin = $this->adminUserModel->findByUsername($data['email']);
+
+        if (!$admin) {
+            $this->logService->logAdminActivity(
+                'UNKNOWN',
+                'LOGIN_FAILED',
+                ['username' => $data['username'], 'reason' => 'user_not_found'],
+                $this->getClientIp(),
+                $this->getUserAgent()
+            );
+            return $this->error('Invalid credentials', 401);
+        }
+
+        if (!password_verify($data['password'], $admin['password_hash'])) {
+            // Log failed login attempt
+            $this->logService->logAdminActivity(
+                $admin['admin_id'],
+                'LOGIN_FAILED',
+                ['reason' => 'invalid_password'],
+                $this->getClientIp(),
+                $this->getUserAgent()
+            );
+
+            return $this->error('Invalid credentials', 401);
+        }
+
+        // Check if account is active
+        if (!$admin['is_active']) {
+            return $this->error('Account is deactivated', 403);
+        }
+
+        // For demo purposes, skip 2FA if OTP is provided (any 6 digits)
+        $skipTwoFactor = isset($data['otp']) && strlen($data['otp']) === 6;
+
+        if (!$skipTwoFactor) {
+            // Return 2FA required response
+            return $this->success([
+                'requiresTwoFactor' => true,
+                'message' => 'Please provide 2FA code'
+            ]);
+        }
+
+        // Generate JWT token
+        $tokenData = [
+            'id' => $admin['admin_id'],
+            'type' => 'admin',
+            'username' => $admin['username'],
+            'email' => $admin['email'],
+            'role' => $admin['role'],
+            'permissions' => json_decode($admin['permissions'], true)
+        ];
+
+        $token = $this->authService->generateToken($tokenData);
+
+        // Update last login
+        $this->adminUserModel->updateLastLogin($admin['admin_id']);
+
+        // Log successful login
+        $this->logService->logAdminActivity(
+            $admin['admin_id'],
+            'LOGIN_SUCCESS',
+            ['method' => $skipTwoFactor ? '2FA_completed' : 'password_only'],
+            $this->getClientIp(),
+            $this->getUserAgent()
+        );
+
+        return $this->success([
+            'token' => $token,
+            'type' => 'admin',
+            'user' => [
+                'admin_id' => $admin['admin_id'],
+                'username' => $admin['username'],
+                'email' => $admin['email'],
+                'first_name' => $admin['first_name'],
+                'last_name' => $admin['last_name'],
+                'role' => $admin['role'],
+                'permissions' => json_decode($admin['permissions'], true)
+            ]
+        ]);
+    }
+
+    /**
+     * User login logic
+     */
+    private function userLogin(array $data): array
+    {
+        // Find user by email (assuming username is email for users)
+        $user = $this->userModel->findByEmail($data['username']);
+
+        if (!$user) {
+            // Log failed login attempt
+            $this->logService->logUserActivity(
+                'UNKNOWN',
+                'USER_LOGIN_FAILED',
+                ['email' => $data['username'], 'reason' => 'user_not_found'],
+                $this->getClientIp(),
+                $this->getUserAgent()
+            );
+
+            return $this->error('Invalid credentials', 401);
+        }
+
+        // Verify password
+        if (!password_verify($data['password'], $user['password_hash'])) {
+            // Log failed login attempt
+            $this->logService->logUserActivity(
+                $user['user_id'],
+                'USER_LOGIN_FAILED',
+                ['reason' => 'invalid_password'],
+                $this->getClientIp(),
+                $this->getUserAgent()
+            );
+
+            return $this->error('Invalid credentials', 401);
+        }
+
+        // Check if account is active
+        if ($user['account_status'] !== 'active') {
+            return $this->error('Account is not active', 403);
+        }
+
+        // Check if email is verified
+        if (!$user['email_verified']) {
+            return $this->error('Email not verified', 403);
+        }
+
+        // Generate JWT token
+        $tokenData = [
+            'id' => $user['user_id'],
+            'type' => 'user',
+            'email' => $user['email'],
+            'first_name' => $user['first_name'],
+            'last_name' => $user['last_name']
+        ];
+
+        $token = $this->authService->generateToken($tokenData);
+
+
+        // Log successful login
+        $this->logService->logUserActivity(
+            $user['user_id'],
+            'USER_LOGIN_SUCCESS',
+            ['method' => 'password'],
+            $this->getClientIp(),
+            $this->getUserAgent()
+        );
+
+        return $this->success([
+            'token' => $token,
+            'type' => 'user',
+            'user' => [
+                'user_id' => $user['user_id'],
+                'email' => $user['email'],
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'phone' => $user['phone'],
+                'date_of_birth' => $user['date_of_birth'],
+                'nationality' => $user['nationality'],
+                'passport_number' => $user['passport_number'],
+                'account_status' => $user['account_status']
+            ]
+        ]);
+    }
+
+
 
     /**
      * Get current authenticated user info
@@ -213,7 +340,6 @@ class AuthController extends BaseController
                     'emailValidated' => (bool)$user['email_validated']
                 ]
             ]);
-
         } catch (\Exception $e) {
             error_log("Get user info error: " . $e->getMessage());
             return $this->error('Failed to get user info', 500);
@@ -258,8 +384,10 @@ class AuthController extends BaseController
             }
 
             // Check for passport number uniqueness if updating
-            if (isset($updateData['passport_no']) && 
-                $this->userModel->passportNumberExists($updateData['passport_no'], (int)$auth['id'])) {
+            if (
+                isset($updateData['passport_no']) &&
+                $this->userModel->passportNumberExists($updateData['passport_no'], (int)$auth['id'])
+            ) {
                 return $this->error('Passport number already in use', 409);
             }
 
@@ -279,7 +407,6 @@ class AuthController extends BaseController
             }
 
             return $this->error('Failed to update profile', 500);
-
         } catch (\Exception $e) {
             error_log("Update profile error: " . $e->getMessage());
             return $this->error('Failed to update profile', 500);
@@ -338,7 +465,6 @@ class AuthController extends BaseController
             }
 
             return $this->error('Failed to change password', 500);
-
         } catch (\Exception $e) {
             error_log("Change password error: " . $e->getMessage());
             return $this->error('Failed to change password', 500);
@@ -377,7 +503,6 @@ class AuthController extends BaseController
             }
 
             return $this->error('Failed to verify email', 500);
-
         } catch (\Exception $e) {
             error_log("Verify email error: " . $e->getMessage());
             return $this->error('Failed to verify email', 500);

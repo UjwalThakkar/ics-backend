@@ -92,12 +92,12 @@ class User extends BaseModel
             return true;
         }
 
-        $sql = "UPDATE user SET " . implode(', ', array_map(fn($k) => "$k = ?", array_keys($updateData))) . 
-               ", updated_at = NOW() WHERE user_id = ?";
-        
+        $sql = "UPDATE user SET " . implode(', ', array_map(fn($k) => "$k = ?", array_keys($updateData))) .
+            ", updated_at = NOW() WHERE user_id = ?";
+
         $params = array_merge(array_values($updateData), [$userId]);
         $stmt = $this->query($sql, $params);
-        
+
         return $stmt->rowCount() > 0;
     }
 
@@ -117,7 +117,7 @@ class User extends BaseModel
     public function verifyCredentials(string $email, string $password): ?array
     {
         $user = $this->findByEmail($email);
-        
+
         if (!$user) {
             return null;
         }
@@ -259,9 +259,9 @@ class User extends BaseModel
             return true;
         }
 
-        $sql = "UPDATE user SET " . implode(', ', array_map(fn($k) => "$k = ?", array_keys($updateData))) . 
-               ", updated_at = NOW() WHERE user_id = ?";
-        
+        $sql = "UPDATE user SET " . implode(', ', array_map(fn($k) => "$k = ?", array_keys($updateData))) .
+            ", updated_at = NOW() WHERE user_id = ?";
+
         $params = array_merge(array_values($updateData), [$userId]);
         $stmt = $this->query($sql, $params);
 
@@ -324,7 +324,7 @@ class User extends BaseModel
                 OR passport_no LIKE ?
                 ORDER BY created_at DESC
                 LIMIT ?";
-        
+
         $stmt = $this->query($sql, [$searchPattern, $searchPattern, $searchPattern, $searchPattern, $limit]);
         return $stmt->fetchAll();
     }
@@ -343,8 +343,10 @@ class User extends BaseModel
                 LEFT JOIN appointment a ON u.user_id = a.booked_by
                 WHERE u.user_id = ?
                 GROUP BY u.user_id";
-        
+
         $stmt = $this->query($sql, [$userId]);
         return $stmt->fetch() ?: null;
     }
+
+
 }

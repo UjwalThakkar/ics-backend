@@ -41,7 +41,6 @@ class AppointmentController extends BaseController
                 'appointments' => $appointments,
                 'count' => count($appointments)
             ]);
-
         } catch (\Exception $e) {
             error_log("Get appointments error: " . $e->getMessage());
             return $this->error('Failed to load appointments', 500);
@@ -77,7 +76,6 @@ class AppointmentController extends BaseController
             }
 
             return $this->success(['appointment' => $appointment]);
-
         } catch (\Exception $e) {
             error_log("Get appointment details error: " . $e->getMessage());
             return $this->error('Failed to load appointment', 500);
@@ -120,7 +118,7 @@ class AppointmentController extends BaseController
             // Check if appointment is in the past
             $appointmentDateTime = new \DateTime($appointment['appointment_date'] . ' ' . $appointment['start_time']);
             $now = new \DateTime();
-            
+
             if ($appointmentDateTime < $now) {
                 return $this->error('Cannot cancel past appointments', 400);
             }
@@ -142,7 +140,6 @@ class AppointmentController extends BaseController
             }
 
             return $this->error('Failed to cancel appointment', 500);
-
         } catch (\Exception $e) {
             error_log("Cancel appointment error: " . $e->getMessage());
             return $this->error('Failed to cancel appointment', 500);
@@ -174,7 +171,6 @@ class AppointmentController extends BaseController
                     'upcoming' => (int)$user['upcoming_appointments']
                 ]
             ]);
-
         } catch (\Exception $e) {
             error_log("Get appointment stats error: " . $e->getMessage());
             return $this->error('Failed to load statistics', 500);
@@ -230,8 +226,7 @@ class AppointmentController extends BaseController
                 $countParams[] = $filters['center_id'];
             }
 
-            $countStmt = $this->appointmentModel->query($countSql, $countParams);
-            $total = $countStmt->fetch()['count'];
+            $total = $this->appointmentModel->count($filters); // Now works!
 
             return $this->success([
                 'appointments' => $appointments,
@@ -242,7 +237,6 @@ class AppointmentController extends BaseController
                     'totalPages' => ceil($total / $limit)
                 ]
             ]);
-
         } catch (\Exception $e) {
             error_log("Admin get appointments error: " . $e->getMessage());
             return $this->error('Failed to load appointments', 500);
@@ -273,7 +267,6 @@ class AppointmentController extends BaseController
             }
 
             return $this->success(['appointment' => $appointment]);
-
         } catch (\Exception $e) {
             error_log("Admin get appointment error: " . $e->getMessage());
             return $this->error('Failed to load appointment', 500);
@@ -327,7 +320,6 @@ class AppointmentController extends BaseController
             }
 
             return $this->error('Failed to update appointment status', 500);
-
         } catch (\Exception $e) {
             error_log("Update appointment status error: " . $e->getMessage());
             return $this->error('Failed to update appointment status', 500);
@@ -353,7 +345,6 @@ class AppointmentController extends BaseController
             $stats = $this->appointmentModel->getStats($centerId, $dateFrom, $dateTo);
 
             return $this->success(['stats' => $stats]);
-
         } catch (\Exception $e) {
             error_log("Admin get stats error: " . $e->getMessage());
             return $this->error('Failed to load statistics', 500);
@@ -381,7 +372,6 @@ class AppointmentController extends BaseController
                 'appointments' => $appointments,
                 'count' => count($appointments)
             ]);
-
         } catch (\Exception $e) {
             error_log("Get upcoming appointments error: " . $e->getMessage());
             return $this->error('Failed to load upcoming appointments', 500);
@@ -421,7 +411,6 @@ class AppointmentController extends BaseController
                     'to' => $data['dateTo']
                 ]
             ]);
-
         } catch (\Exception $e) {
             error_log("Get appointments by date range error: " . $e->getMessage());
             return $this->error('Failed to load appointments', 500);

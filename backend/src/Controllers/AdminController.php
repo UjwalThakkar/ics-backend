@@ -423,4 +423,6 @@ class AdminController extends BaseController
             return $this->error('Failed to get system status', 500);
         }
     }
+
+    
 }
