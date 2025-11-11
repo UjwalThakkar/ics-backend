@@ -10,6 +10,7 @@ use IndianConsular\Controllers\AppointmentController;
 use IndianConsular\Controllers\ServiceController;
 use IndianConsular\Controllers\VerificationCenterController;
 use IndianConsular\Controllers\AdminController;
+use IndianConsular\Controllers\TimeSlotController;
 
 class Router
 {
@@ -34,31 +35,31 @@ class Router
             // =============================================
             // Step 1: Get services
             'GET /booking/services' => [BookingController::class, 'getServices'],
-            
+
             // Step 2: Get centers for service
             'GET /booking/centers/{serviceId}' => [BookingController::class, 'getCentersForService'],
-            
+
             // Step 3: Get user details (authenticated)
             'GET /booking/user-details' => [BookingController::class, 'getUserDetails'],
-            
+
             // Step 4: Get available dates
             'GET /booking/available-dates' => [BookingController::class, 'getAvailableDates'],
-            
+
             // Step 5: Get available slots
             'GET /booking/available-slots' => [BookingController::class, 'getAvailableSlots'],
-            
+
             // Step 6: Create booking (authenticated)
             'POST /booking/create' => [BookingController::class, 'createBooking'],
-            
+
             // Step 7: Get confirmation (authenticated)
             'GET /booking/confirmation/{bookingId}' => [BookingController::class, 'getConfirmation'],
-            
+
             // My bookings (authenticated)
             'GET /booking/my-bookings' => [BookingController::class, 'getMyBookings'],
-            
+
             // Cancel booking (authenticated)
             'POST /booking/cancel/{bookingId}' => [BookingController::class, 'cancelBooking'],
-            
+
             // Booking settings
             'GET /booking/settings' => [BookingController::class, 'getSettings'],
 
@@ -123,6 +124,18 @@ class Router
             'GET /admin/appointments/stats' => [AppointmentController::class, 'adminGetStats'],
             'GET /admin/appointments/upcoming' => [AppointmentController::class, 'getUpcoming'],
             'GET /admin/appointments/date-range' => [AppointmentController::class, 'getByDateRange'],
+
+            // =============================================
+            // ADMIN TIME SLOT ROUTES
+            // =============================================
+            'GET /admin/time-slots' => [TimeSlotController::class, 'adminList'],
+            'PUT /admin/time-slots/settings' => [TimeSlotController::class, 'updateSettings'],
+            'PUT /admin/time-slots/{id}/toggle' => [TimeSlotController::class, 'toggleSlot'],
+            'POST /admin/time-slots/bulk-toggle' => [TimeSlotController::class, 'bulkToggle'],
+            'POST /admin/time-slots' => [TimeSlotController::class, 'createSlot'],
+            'POST /admin/time-slots/bulk-create' => [TimeSlotController::class, 'bulkCreate'],
+            'PUT /admin/time-slots/{id}' => [TimeSlotController::class, 'updateSlot'],
+            'DELETE /admin/time-slots/{id}' => [TimeSlotController::class, 'deleteSlot'],
         ];
     }
 
@@ -198,11 +211,10 @@ class Router
 
             // Call controller method
             return $controller->$method($requestData, $params);
-
         } catch (\Exception $e) {
             error_log("Controller error: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
-            
+
             return [
                 'status' => 500,
                 'data' => [
@@ -261,7 +273,7 @@ class Router
     {
         $path = trim($path, '/');
         $routeKey = "{$method} /{$path}";
-        
+
         if (isset($this->routes[$routeKey])) {
             return true;
         }

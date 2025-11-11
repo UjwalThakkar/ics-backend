@@ -45,7 +45,7 @@ class TimeSlot extends BaseModel
                 AND start_time >= ? 
                 AND end_time <= ?
                 ORDER BY start_time ASC";
-        
+
         $stmt = $this->query($sql, [$startTime, $endTime]);
         return $stmt->fetchAll();
     }
@@ -184,7 +184,7 @@ class TimeSlot extends BaseModel
                     AND a.appointment_date = ?
                     AND a.appointment_status = 'scheduled'
                     GROUP BY a.slot";
-        
+
         $bookingStmt = $this->query($bookingSql, [$counterId, $date]);
         $bookings = $bookingStmt->fetchAll(\PDO::FETCH_KEY_PAIR);
 
@@ -246,7 +246,7 @@ class TimeSlot extends BaseModel
                     AND a.at_counter IN ($placeholders)
                     AND a.appointment_status = 'scheduled'
                     GROUP BY b.booked_slot";
-        
+
         $params = array_merge([$date], $counters);
         $bookingStmt = $this->query($bookingSql, $params);
         $bookings = $bookingStmt->fetchAll(\PDO::FETCH_KEY_PAIR);
@@ -282,12 +282,12 @@ class TimeSlot extends BaseModel
         // Build date filter
         $dateWhere = "WHERE 1=1";
         $params = [];
-        
+
         if ($dateFrom) {
             $dateWhere .= " AND a.appointment_date >= ?";
             $params[] = $dateFrom;
         }
-        
+
         if ($dateTo) {
             $dateWhere .= " AND a.appointment_date <= ?";
             $params[] = $dateTo;
@@ -304,7 +304,7 @@ class TimeSlot extends BaseModel
                 $dateWhere
                 GROUP BY ts.slot_id
                 ORDER BY booking_count DESC";
-        
+
         $stmt = $this->query($sql, $params);
         $stats['most_booked'] = $stmt->fetchAll();
 
@@ -328,25 +328,57 @@ class TimeSlot extends BaseModel
                 break;
             }
 
-            // Check if slot already exists
+            $startStr = $start->format('H:i:s');
+            $endStr = $slotEnd->format('H:i:s');
+
+            // CHECK 1: Exact duplicate
             $checkSql = "SELECT COUNT(*) as count FROM time_slots WHERE start_time = ? AND end_time = ?";
-            $checkStmt = $this->query($checkSql, [$start->format('H:i:s'), $slotEnd->format('H:i:s')]);
+            $checkStmt = $this->query($checkSql, [$startStr, $endStr]);
             $exists = $checkStmt->fetch()['count'] > 0;
 
-            if (!$exists) {
-                $slotId = $this->createTimeSlot([
-                    'start_time' => $start->format('H:i:s'),
-                    'end_time' => $slotEnd->format('H:i:s'),
-                    'duration' => $slotDuration
-                ]);
-
-                $created[] = [
-                    'slot_id' => $slotId,
-                    'start_time' => $start->format('H:i:s'),
-                    'end_time' => $slotEnd->format('H:i:s'),
-                    'duration' => $slotDuration
-                ];
+            if ($exists) {
+                $start = $slotEnd;
+                continue;
             }
+
+            // CHECK 2: Overlap with any slot
+            $overlapSql = "SELECT COUNT(*) as count FROM time_slots 
+                       WHERE is_active = 1
+                       AND (
+                           (start_time < ? AND end_time > ?) OR
+                           (start_time < ? AND end_time > ?) OR
+                           (start_time >= ? AND end_time <= ?)
+                       )";
+            $overlapStmt = $this->query($overlapSql, [
+                $endStr,
+                $startStr,
+                $endStr,
+                $endStr,
+                $startStr,
+                $endStr
+            ]);
+            $overlap = $overlapStmt->fetch()['count'] > 0;
+
+            if ($overlap) {
+                // Optional: Log or skip
+                error_log("Slot overlap skipped: {$startStr}–{$endStr}");
+                $start = $slotEnd;
+                continue;
+            }
+
+            // INSERT
+            $slotId = $this->createTimeSlot([
+                'start_time' => $startStr,
+                'end_time' => $endStr,
+                'duration' => $slotDuration
+            ]);
+
+            $created[] = [
+                'slot_id' => $slotId,
+                'start_time' => $startStr,
+                'end_time' => $endStr,
+                'duration' => $slotDuration
+            ];
 
             $start = $slotEnd;
         }
@@ -366,7 +398,7 @@ class TimeSlot extends BaseModel
                     (start_time < ? AND end_time > ?) OR
                     (start_time >= ? AND end_time <= ?)
                 )";
-        
+
         $params = [$endTime, $startTime, $endTime, $endTime, $startTime, $endTime];
 
         if ($excludeSlotId) {
@@ -391,7 +423,7 @@ class TimeSlot extends BaseModel
                 AND start_time > ?
                 ORDER BY start_time ASC 
                 LIMIT 1";
-        
+
         $stmt = $this->query($sql, [$currentTime]);
         return $stmt->fetch() ?: null;
     }
