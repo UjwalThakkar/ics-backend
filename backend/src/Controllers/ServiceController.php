@@ -54,7 +54,6 @@ class ServiceController extends BaseController
                 'services' => $services,
                 'count' => count($services)
             ]);
-
         } catch (\Exception $e) {
             error_log("Get services error: " . $e->getMessage());
             return $this->error('Failed to load services', 500);
@@ -74,7 +73,7 @@ class ServiceController extends BaseController
         }
 
         try {
-            $service = $this->serviceModel->findByServiceId($serviceId);
+            $service = $this->serviceModel->findByServiceId((int)$serviceId);
 
             if (!$service) {
                 return $this->error('Service not found', 404);
@@ -84,7 +83,6 @@ class ServiceController extends BaseController
             $this->decodeServiceJsonFields($service);
 
             return $this->success(['service' => $service]);
-
         } catch (\Exception $e) {
             error_log("Get service error: " . $e->getMessage());
             return $this->error('Failed to load service', 500);
@@ -104,7 +102,6 @@ class ServiceController extends BaseController
                 'categories' => $categories,
                 'count' => count($categories)
             ]);
-
         } catch (\Exception $e) {
             error_log("Get categories error: " . $e->getMessage());
             return $this->error('Failed to load categories', 500);
@@ -136,7 +133,6 @@ class ServiceController extends BaseController
                 'services' => $services,
                 'count' => count($services)
             ]);
-
         } catch (\Exception $e) {
             error_log("Get services by category error: " . $e->getMessage());
             return $this->error('Failed to load services', 500);
@@ -156,7 +152,7 @@ class ServiceController extends BaseController
         }
 
         try {
-            $sql = "SELECT * FROM services 
+            $sql = "SELECT * FROM service 
                     WHERE is_active = 1 
                     AND (
                         title LIKE ? 
@@ -179,7 +175,6 @@ class ServiceController extends BaseController
                 'services' => $services,
                 'count' => count($services)
             ]);
-
         } catch (\Exception $e) {
             error_log("Search services error: " . $e->getMessage());
             return $this->error('Failed to search services', 500);
@@ -237,7 +232,6 @@ class ServiceController extends BaseController
                     'totalPages' => ceil($total / $limit)
                 ]
             ]);
-
         } catch (\Exception $e) {
             error_log("Admin get services error: " . $e->getMessage());
             return $this->error('Failed to load services', 500);
@@ -258,7 +252,11 @@ class ServiceController extends BaseController
         $data = $this->sanitize($data);
 
         $missing = $this->validateRequired($data, [
-            'serviceId', 'category', 'title', 'fees', 'requiredDocuments'
+            'category',
+            'title',
+            'description',
+            'fees',
+            'required_documents'
         ]);
 
         if (!empty($missing)) {
@@ -266,44 +264,37 @@ class ServiceController extends BaseController
         }
 
         try {
-            // Check if service ID already exists
-            if ($this->serviceModel->findByServiceId($data['serviceId'])) {
-                return $this->error('Service ID already exists', 409);
-            }
-
             $serviceData = [
-                'service_id' => $data['serviceId'],
                 'category' => $data['category'],
                 'title' => $data['title'],
                 'description' => $data['description'] ?? '',
-                'processing_time' => $data['processingTime'] ?? '',
-                'fees' => json_encode($data['fees']),
-                'required_documents' => json_encode($data['requiredDocuments']),
-                'eligibility_requirements' => json_encode($data['eligibilityRequirements'] ?? []),
-                'is_active' => $data['isActive'] ?? true,
-                'display_order' => $data['displayOrder'] ?? 0,
+                'processing_time' => $data['processing_time'] ?? '',
+                'fees' => json_encode($data['fees'] ?? []),
+                'required_documents' => json_encode($data['required_documents'] ?? []),
+                'eligibility_requirements' => json_encode($data['eligibility_requirements'] ?? []),
+                'is_active' => isset($data['isActive']) ? (int)(bool)$data['is_active'] : 1,
+                'display_order' => $data['display_order'] ?? 99,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 
-            $this->serviceModel->insert($serviceData);
+            $serviceId = $this->serviceModel->insert($serviceData);
 
             // Log admin activity
             $this->logService->logAdminActivity(
                 $admin['id'],
                 'CREATE_SERVICE',
-                ['service_id' => $data['serviceId'], 'title' => $data['title']],
+                ['service_id' => $serviceId, 'title' => $data['title']],
                 $this->getClientIp(),
                 $this->getUserAgent(),
                 'service',
-                $data['serviceId']
+                (string)$serviceId
             );
 
             return $this->success([
                 'message' => 'Service created successfully',
-                'serviceId' => $data['serviceId']
+                'serviceId' => $serviceId
             ], 201);
-
         } catch (\Exception $e) {
             error_log("Create service error: " . $e->getMessage());
             return $this->error('Failed to create service', 500);
@@ -326,27 +317,34 @@ class ServiceController extends BaseController
             return $this->error('Service ID is required', 400);
         }
 
+
+
         try {
-            $service = $this->serviceModel->findByServiceId($serviceId);
+            $service = $this->serviceModel->findByServiceId((int)$serviceId);
             if (!$service) {
                 return $this->error('Service not found', 404);
             }
 
             $updateData = [];
             $allowedFields = [
-                'category', 'title', 'description', 'processing_time',
-                'fees', 'required_documents', 'eligibility_requirements',
-                'is_active', 'display_order'
+                'category',
+                'title',
+                'description',
+                'processing_time',
+                'fees',
+                'required_documents',
+                'eligibility_requirements',
+                'is_active',
+                'display_order'
             ];
 
             foreach ($allowedFields as $field) {
-                $dataKey = lcfirst(str_replace('_', '', ucwords($field, '_')));
-                if (isset($data[$dataKey])) {
-                    // JSON fields need encoding
+                $camelKey = lcfirst(str_replace('_', '', ucwords($field, '_')));
+                if (isset($data[$camelKey])) {
                     if (in_array($field, ['fees', 'required_documents', 'eligibility_requirements'])) {
-                        $updateData[$field] = json_encode($data[$dataKey]);
+                        $updateData[$field] = json_encode($data[$camelKey]);
                     } else {
-                        $updateData[$field] = $data[$dataKey];
+                        $updateData[$field] = $data[$camelKey];
                     }
                 }
             }
@@ -367,11 +365,10 @@ class ServiceController extends BaseController
                 $this->getClientIp(),
                 $this->getUserAgent(),
                 'service',
-                $serviceId
+                (string)$serviceId
             );
 
             return $this->success(['message' => 'Service updated successfully']);
-
         } catch (\Exception $e) {
             error_log("Update service error: " . $e->getMessage());
             return $this->error('Failed to update service', 500);
@@ -395,7 +392,7 @@ class ServiceController extends BaseController
         }
 
         try {
-            $service = $this->serviceModel->findByServiceId($serviceId);
+            $service = $this->serviceModel->findByServiceId((int)$serviceId);
             if (!$service) {
                 return $this->error('Service not found', 404);
             }
@@ -422,11 +419,10 @@ class ServiceController extends BaseController
                 $this->getClientIp(),
                 $this->getUserAgent(),
                 'service',
-                $serviceId
+                (string)$serviceId
             );
 
             return $this->success(['message' => 'Service deleted successfully']);
-
         } catch (\Exception $e) {
             error_log("Delete service error: " . $e->getMessage());
             return $this->error('Failed to delete service', 500);
@@ -450,7 +446,7 @@ class ServiceController extends BaseController
         }
 
         try {
-            $service = $this->serviceModel->findByServiceId($serviceId);
+            $service = $this->serviceModel->findByServiceId((int)$serviceId);
             if (!$service) {
                 return $this->error('Service not found', 404);
             }
@@ -458,7 +454,7 @@ class ServiceController extends BaseController
             $newStatus = !$service['is_active'];
 
             $this->serviceModel->updateBy('service_id', $serviceId, [
-                'is_active' => $newStatus,
+                'is_active' => $newStatus ? 1 : 0,
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
 
@@ -470,17 +466,54 @@ class ServiceController extends BaseController
                 $this->getClientIp(),
                 $this->getUserAgent(),
                 'service',
-                $serviceId
+                (string)$serviceId
             );
 
             return $this->success([
                 'message' => 'Service ' . ($newStatus ? 'activated' : 'deactivated') . ' successfully',
                 'isActive' => $newStatus
             ]);
-
         } catch (\Exception $e) {
             error_log("Toggle service error: " . $e->getMessage());
             return $this->error('Failed to toggle service status', 500);
+        }
+    }
+
+    /**
+     * Get single service for admin edit (Admin)
+     * GET /admin/services/{id}
+     */
+    /**
+     * Get single service for admin edit (Admin)
+     * GET /admin/services/{id}
+     */
+    public function adminGet(array $data, array $params): array
+    {
+        $admin = $this->requireAuth($data);
+        if (!$admin || $admin['type'] !== 'admin') {
+            return $this->error('Unauthorized', 401);
+        }
+
+        $serviceId = $params['id'] ?? '';
+        if (empty($serviceId)) {
+            return $this->error('Service ID required', 400);
+        }
+
+        try {
+            // This already decodes JSON fields!
+            $service = $this->serviceModel->findByServiceId((int)$serviceId);
+
+            if (!$service) {
+                return $this->error('Service not found', 404);
+            }
+
+            // DO NOT call decodeServiceJsonFields() again!
+            // It's already decoded in findByServiceId()
+
+            return $this->success(['service' => $service]);
+        } catch (\Exception $e) {
+            error_log("Admin get service error: " . $e->getMessage());
+            return $this->error('Failed to load service', 500);
         }
     }
 }

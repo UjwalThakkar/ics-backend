@@ -73,6 +73,16 @@ class Router
             'GET /services/{id}' => [ServiceController::class, 'get'],
 
             // =============================================
+            // ADMIN SERVICE ROUTES
+            // =============================================
+            'GET /admin/services' => [ServiceController::class, 'adminList'],
+            'POST /admin/services' => [ServiceController::class, 'addService'],
+            'PUT /admin/services/{id}' => [ServiceController::class, 'editService'],
+            'DELETE /admin/services/{id}' => [ServiceController::class, 'deleteService'],
+            'PUT /admin/services/{id}/toggle' => [ServiceController::class, 'toggleActive'],
+            'GET /admin/services/{id}' => [ServiceController::class, 'adminGet'],
+
+            // =============================================
             // VERIFICATION CENTERS ROUTES (Public)
             // =============================================
             'GET /centers' => [VerificationCenterController::class, 'list'],
