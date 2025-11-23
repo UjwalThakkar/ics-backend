@@ -223,7 +223,7 @@ class AuthController extends BaseController
     private function userLogin(array $data): array
     {
         // Find user by email (assuming username is email for users)
-        $user = $this->userModel->findByEmail($data['username']);
+        $user = $this->userModel->findByEmail($data['email']);
 
         if (!$user) {
             // Log failed login attempt
@@ -258,7 +258,7 @@ class AuthController extends BaseController
         }
 
         // Check if email is verified
-        if (!$user['email_verified']) {
+        if (!$user['email_validated']) {
             return $this->error('Email not verified', 403);
         }
 
@@ -271,12 +271,12 @@ class AuthController extends BaseController
             'last_name' => $user['last_name']
         ];
 
-        $token = $this->authService->generateToken($tokenData);
 
+        $token = $this->authService->generateToken($tokenData);
 
         // Log successful login
         $this->logService->logUserActivity(
-            $user['user_id'],
+            (string)$user['user_id'],
             'USER_LOGIN_SUCCESS',
             ['method' => 'password'],
             $this->getClientIp(),
@@ -291,10 +291,10 @@ class AuthController extends BaseController
                 'email' => $user['email'],
                 'first_name' => $user['first_name'],
                 'last_name' => $user['last_name'],
-                'phone' => $user['phone'],
+                'phone' => $user['phone_no'],
                 'date_of_birth' => $user['date_of_birth'],
                 'nationality' => $user['nationality'],
-                'passport_number' => $user['passport_number'],
+                'passport_number' => $user['passport_no'],
                 'account_status' => $user['account_status']
             ]
         ]);

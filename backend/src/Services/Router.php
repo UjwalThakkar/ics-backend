@@ -11,6 +11,7 @@ use IndianConsular\Controllers\ServiceController;
 use IndianConsular\Controllers\VerificationCenterController;
 use IndianConsular\Controllers\AdminController;
 use IndianConsular\Controllers\TimeSlotController;
+use IndianConsular\Controllers\VisaController;
 
 class Router
 {
@@ -146,6 +147,14 @@ class Router
             'POST /admin/time-slots/bulk-create' => [TimeSlotController::class, 'bulkCreate'],
             'PUT /admin/time-slots/{id}' => [TimeSlotController::class, 'updateSlot'],
             'DELETE /admin/time-slots/{id}' => [TimeSlotController::class, 'deleteSlot'],
+
+            // =============================================
+            // VISA INFORMATION ROUTES (Public - VFS Style)
+            // =============================================
+            'GET /visa/countries'                  => [VisaController::class, 'getCountries'],
+            'GET /visa/country/{country_slug}'     => [VisaController::class, 'getCountryDetail'],
+            'GET /visa/type'                   => [VisaController::class, 'getVisaTypeDetail'],
+            'GET /visa/type/{visa_slug}'           => [VisaController::class, 'getVisaTypeDetail'],
         ];
     }
 
