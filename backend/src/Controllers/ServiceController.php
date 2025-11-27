@@ -263,6 +263,17 @@ class ServiceController extends BaseController
             return $this->error('Missing required fields: ' . implode(', ', $missing), 400);
         }
 
+        // New: Validate center_ids (array of integers, at least one)
+        $centerIds = $data['center_ids'] ?? [];
+        if (!is_array($centerIds) || empty($centerIds)) {
+            return $this->error('At least one verification center must be selected (center_ids as array)', 400);
+        }
+        foreach ($centerIds as $id) {
+            if (!is_int($id)) {
+                return $this->error('center_ids must be an array of integers', 400);
+            }
+        }
+
         try {
             $serviceData = [
                 'category' => $data['category'],
@@ -272,7 +283,7 @@ class ServiceController extends BaseController
                 'fees' => json_encode($data['fees'] ?? []),
                 'required_documents' => json_encode($data['required_documents'] ?? []),
                 'eligibility_requirements' => json_encode($data['eligibility_requirements'] ?? []),
-                'is_active' => isset($data['isActive']) ? (int)(bool)$data['is_active'] : 1,
+                'is_active' => isset($data['is_active']) ? (int)(bool)$data['is_active'] : 1,
                 'display_order' => $data['display_order'] ?? 99,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
@@ -280,11 +291,24 @@ class ServiceController extends BaseController
 
             $serviceId = $this->serviceModel->insert($serviceData);
 
+            // New: Associate with selected VCs
+            $centerModel = new \IndianConsular\Models\VerificationCenter();
+            foreach ($centerIds as $centerId) {
+                $center = $centerModel->findByCenterId($centerId);
+                if ($center) {
+                    $providesServices = json_decode($center['provides_services'] ?? '[]', true);
+                    if (!in_array($serviceId, $providesServices)) {
+                        $providesServices[] = $serviceId;
+                        $centerModel->updateProvidedServices($centerId, $providesServices);
+                    }
+                }
+            }
+
             // Log admin activity
             $this->logService->logAdminActivity(
                 $admin['id'],
                 'CREATE_SERVICE',
-                ['service_id' => $serviceId, 'title' => $data['title']],
+                ['service_id' => $serviceId, 'title' => $data['title'], 'centers' => $centerIds],
                 $this->getClientIp(),
                 $this->getUserAgent(),
                 'service',
@@ -292,14 +316,14 @@ class ServiceController extends BaseController
             );
 
             return $this->success([
-                'message' => 'Service created successfully',
+                'message' => 'Service created successfully and associated with selected centers',
                 'serviceId' => $serviceId
             ], 201);
         } catch (\Exception $e) {
             error_log("Create service error: " . $e->getMessage());
             return $this->error('Failed to create service', 500);
         }
-    }
+    }   
 
     /**
      * Update service (Admin)
@@ -397,17 +421,17 @@ class ServiceController extends BaseController
                 return $this->error('Service not found', 404);
             }
 
-            // Check if service is being used in applications
-            $sql = "SELECT COUNT(*) as count FROM applications WHERE service_id = ?";
-            $stmt = $this->serviceModel->query($sql, [$serviceId]);
-            $result = $stmt->fetch();
+            // // Check if service is being used in applications
+            // $sql = "SELECT COUNT(*) as count FROM applications WHERE service_id = ?";
+            // $stmt = $this->serviceModel->query($sql, [$serviceId]);
+            // $result = $stmt->fetch();
 
-            if ($result['count'] > 0) {
-                return $this->error(
-                    'Cannot delete service that has existing applications. Deactivate it instead.',
-                    400
-                );
-            }
+            // if ($result['count'] > 0) {
+            //     return $this->error(
+            //         'Cannot delete service that has existing applications. Deactivate it instead.',
+            //         400
+            //     );
+            // }
 
             $this->serviceModel->deleteBy('service_id', $serviceId);
 

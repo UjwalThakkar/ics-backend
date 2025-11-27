@@ -256,7 +256,7 @@ class Booking extends BaseModel
         $updates = [];
         $params = [];
         
-        $allowedFields = ['gender', 'date_of_birth', 'nationality', 'passport_no', 'passport_expiry'];
+        $allowedFields = ['gender', 'date_of_birth', 'nationality', 'passport_no', 'passport_expiry', 'phone_no'];
         
         foreach ($allowedFields as $field) {
             if (isset($details[$field])) {

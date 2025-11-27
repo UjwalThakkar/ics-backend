@@ -42,10 +42,37 @@ class VerificationCenterController extends BaseController
                 'centers' => $centers,
                 'count' => count($centers)
             ]);
-
         } catch (\Exception $e) {
             error_log("Get centers error: " . $e->getMessage());
             return $this->error('Failed to load centers', 500);
+        }
+    }
+
+    /**
+     * Get services provided by a center (for counter service selection) (Admin)
+     * GET /admin/centers/{id}/services
+     */
+    public function adminGetCenterServices(array $data, array $params): array
+    {
+        $admin = $this->requireAuth($data);
+        if (!$admin || $admin['type'] !== 'admin') {
+            return $this->error('Unauthorized', 401);
+        }
+
+        $centerId = $params['id'] ?? '';
+        if (empty($centerId)) {
+            return $this->error('Center ID is required', 400);
+        }
+
+        try {
+            $center = $this->centerModel->getCenterWithServices((int)$centerId);
+            if (!$center) {
+                return $this->error('Center not found', 404);
+            }
+            return $this->success(['services' => $center['services'] ?? []]);
+        } catch (\Exception $e) {
+            error_log("Admin get center services error: " . $e->getMessage());
+            return $this->error('Failed to load center services', 500);
         }
     }
 
@@ -69,7 +96,6 @@ class VerificationCenterController extends BaseController
             }
 
             return $this->success(['center' => $center]);
-
         } catch (\Exception $e) {
             error_log("Get center error: " . $e->getMessage());
             return $this->error('Failed to load center', 500);
@@ -96,7 +122,6 @@ class VerificationCenterController extends BaseController
             }
 
             return $this->success(['center' => $center]);
-
         } catch (\Exception $e) {
             error_log("Get center services error: " . $e->getMessage());
             return $this->error('Failed to load center services', 500);
@@ -136,7 +161,6 @@ class VerificationCenterController extends BaseController
                 'centers' => $centers,
                 'count' => count($centers)
             ]);
-
         } catch (\Exception $e) {
             error_log("Get centers by city error: " . $e->getMessage());
             return $this->error('Failed to load centers', 500);
@@ -176,7 +200,6 @@ class VerificationCenterController extends BaseController
                 'centers' => $centers,
                 'count' => count($centers)
             ]);
-
         } catch (\Exception $e) {
             error_log("Get centers by country error: " . $e->getMessage());
             return $this->error('Failed to load centers', 500);
@@ -213,7 +236,6 @@ class VerificationCenterController extends BaseController
                 'centers' => $centers,
                 'count' => count($centers)
             ]);
-
         } catch (\Exception $e) {
             error_log("Search nearby centers error: " . $e->getMessage());
             return $this->error('Failed to search nearby centers', 500);
@@ -242,7 +264,6 @@ class VerificationCenterController extends BaseController
                 'slots' => $slots,
                 'count' => count($slots)
             ]);
-
         } catch (\Exception $e) {
             error_log("Get available slots error: " . $e->getMessage());
             return $this->error('Failed to load available slots', 500);
@@ -296,7 +317,6 @@ class VerificationCenterController extends BaseController
                     'totalPages' => ceil($total / $limit)
                 ]
             ]);
-
         } catch (\Exception $e) {
             error_log("Admin get centers error: " . $e->getMessage());
             return $this->error('Failed to load centers', 500);
@@ -317,7 +337,10 @@ class VerificationCenterController extends BaseController
         $data = $this->sanitize($data);
 
         $missing = $this->validateRequired($data, [
-            'name', 'address', 'city', 'country'
+            'name',
+            'address',
+            'city',
+            'country'
         ]);
 
         if (!empty($missing)) {
@@ -360,7 +383,6 @@ class VerificationCenterController extends BaseController
                 'message' => 'Center created successfully',
                 'centerId' => $centerId
             ], 201);
-
         } catch (\Exception $e) {
             error_log("Create center error: " . $e->getMessage());
             return $this->error('Failed to create center', 500);
@@ -391,8 +413,18 @@ class VerificationCenterController extends BaseController
 
             $updateData = [];
             $allowedFields = [
-                'name', 'address', 'city', 'state', 'country', 'postal_code',
-                'phone', 'email', 'latitude', 'longitude', 'is_active', 'display_order'
+                'name',
+                'address',
+                'city',
+                'state',
+                'country',
+                'postal_code',
+                'phone',
+                'email',
+                'latitude',
+                'longitude',
+                'is_active',
+                'display_order'
             ];
 
             foreach ($allowedFields as $field) {
@@ -412,10 +444,10 @@ class VerificationCenterController extends BaseController
             }
 
             if (!empty($updateData)) {
-                $sql = "UPDATE verification_center SET " . 
-                       implode(', ', array_map(fn($k) => "$k = ?", array_keys($updateData))) . 
-                       ", updated_at = NOW() WHERE center_id = ?";
-                
+                $sql = "UPDATE verification_center SET " .
+                    implode(', ', array_map(fn($k) => "$k = ?", array_keys($updateData))) .
+                    ", updated_at = NOW() WHERE center_id = ?";
+
                 $params = array_merge(array_values($updateData), [(int)$centerId]);
                 $this->centerModel->query($sql, $params);
             }
@@ -432,7 +464,6 @@ class VerificationCenterController extends BaseController
             );
 
             return $this->success(['message' => 'Center updated successfully']);
-
         } catch (\Exception $e) {
             error_log("Update center error: " . $e->getMessage());
             return $this->error('Failed to update center', 500);
@@ -479,7 +510,6 @@ class VerificationCenterController extends BaseController
                 'message' => 'Center ' . ($newStatus ? 'activated' : 'deactivated') . ' successfully',
                 'isActive' => $newStatus
             ]);
-
         } catch (\Exception $e) {
             error_log("Toggle center error: " . $e->getMessage());
             return $this->error('Failed to toggle center status', 500);

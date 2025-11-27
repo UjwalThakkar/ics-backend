@@ -48,6 +48,34 @@ class VerificationCenter extends BaseModel
     }
 
     /**
+     * Get active verification centers for selection (Public)
+     * GET /centers/active
+     */
+    // public function getActiveCenters(array $data, array $params): array
+    // {
+    //     try {
+    //         $centers = $this->centerModel->getActiveCenters();
+    //         // Simplify response to ID and name for selection
+    //         $simplified = array_map(function ($center) {
+    //             return [
+    //                 'id' => $center['center_id'],
+    //                 'name' => $center['name'],
+    //                 'city' => $center['city'],
+    //                 'country' => $center['country']
+    //             ];
+    //         }, $centers);
+
+    //         return $this->success([
+    //             'centers' => $simplified,
+    //             'count' => count($simplified)
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         error_log("Get active centers error: " . $e->getMessage());
+    //         return $this->error('Failed to load active centers', 500);
+    //     }
+    // }
+
+    /**
      * Get center with counters
      */
     public function getCenterWithCounters(int $centerId): ?array
@@ -200,7 +228,7 @@ class VerificationCenter extends BaseModel
                 AND a.appointment_date = ?
                 AND a.appointment_status = 'scheduled'
                 GROUP BY a.slot";
-        
+
         $stmt = $this->query($sql, [$centerId, $date]);
         $bookedSlots = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
 
@@ -248,7 +276,7 @@ class VerificationCenter extends BaseModel
                 WHERE vc.is_active = 1
                 GROUP BY vc.center_id
                 ORDER BY vc.display_order ASC, vc.name ASC";
-        
+
         $stmt = $this->query($sql);
         return $stmt->fetchAll();
     }

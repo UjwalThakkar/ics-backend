@@ -10,6 +10,7 @@ use IndianConsular\Controllers\AppointmentController;
 use IndianConsular\Controllers\ServiceController;
 use IndianConsular\Controllers\VerificationCenterController;
 use IndianConsular\Controllers\AdminController;
+use IndianConsular\Controllers\CounterController;
 use IndianConsular\Controllers\TimeSlotController;
 use IndianConsular\Controllers\VisaController;
 
@@ -79,7 +80,7 @@ class Router
             'GET /admin/services' => [ServiceController::class, 'adminList'],
             'POST /admin/services' => [ServiceController::class, 'addService'],
             'PUT /admin/services/{id}' => [ServiceController::class, 'editService'],
-            'DELETE /admin/services/{id}' => [ServiceController::class, 'deleteService'],
+            // 'DELETE /admin/services/{id}' => [ServiceController::class, 'deleteService'],
             'PUT /admin/services/{id}/toggle' => [ServiceController::class, 'toggleActive'],
             'GET /admin/services/{id}' => [ServiceController::class, 'adminGet'],
 
@@ -93,6 +94,15 @@ class Router
             'GET /centers/country/{country}' => [VerificationCenterController::class, 'getByCountry'],
             'GET /centers/nearby' => [VerificationCenterController::class, 'searchNearby'],
             'GET /centers/{id}/available-slots' => [VerificationCenterController::class, 'getAvailableSlots'],
+            // 'GET /centers/active' => [VerificationCenterController::class, 'getActiveCenters'],
+
+            // ADMIN COUNTER ROUTES
+            'GET /admin/counters' => [CounterController::class, 'adminList'],
+            'POST /admin/counters' => [CounterController::class, 'create'],
+            'POST /admin/counters/{id}/toggle' => [CounterController::class, 'toggleActive'],
+            'PUT /admin/counters/{id}/services' => [CounterController::class, 'updateServices'],
+            'GET /admin/counters/{id}'     => [CounterController::class, 'get'],
+            'PUT /admin/counters/{id}'     => [CounterController::class, 'update'],
 
             // =============================================
             // USER APPOINTMENT ROUTES (Authenticated)
@@ -125,6 +135,7 @@ class Router
             'POST /admin/centers' => [VerificationCenterController::class, 'create'],
             'PUT /admin/centers/{id}' => [VerificationCenterController::class, 'update'],
             'POST /admin/centers/{id}/toggle' => [VerificationCenterController::class, 'toggleActive'],
+            'GET /admin/centers/{id}/services' => [VerificationCenterController::class, 'adminGetCenterServices'],
 
             // =============================================
             // ADMIN APPOINTMENT ROUTES

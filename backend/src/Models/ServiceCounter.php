@@ -389,4 +389,44 @@ class ServiceCounter extends BaseModel
         $stmt = $this->query($sql, [$maxPerSlot, $counterId, $advanceBookingDays]);
         return $stmt->fetch() ?: null;
     }
+
+    
+    public function getCounters(?int $centerId = null, bool $includeInactive = false): array
+    {
+        $sql = "SELECT 
+                    c.*,
+                    vc.name as center_name,
+                    vc.city
+                FROM counter c
+                LEFT JOIN verification_center vc ON c.center_id = vc.center_id
+                WHERE 1=1";
+
+        $params = [];
+
+        if ($centerId !== null) {
+            $sql .= " AND c.center_id = ?";
+            $params[] = $centerId;
+        }
+
+        if (!$includeInactive) {
+            error_log("Filtering to only active counters");
+            $sql .= " AND c.is_active = 1";
+        }
+
+        $sql .= " ORDER BY vc.city ASC, c.counter_name ASC";
+
+        $stmt = $this->query($sql, $params);
+        $counters = $stmt->fetchAll();
+
+        foreach ($counters as &$counter) {
+            if (isset($counter['service_handled'])) {
+                $counter['service_handled'] = json_decode($counter['service_handled'], true) ?? [];
+            }
+            $counter['status_text']  = $counter['is_active'] ? 'Active' : 'Inactive';
+            $counter['status_color'] = $counter['is_active'] ? 'success' : 'danger';
+        }
+        unset($counter);
+
+        return $counters;
+    }
 }
