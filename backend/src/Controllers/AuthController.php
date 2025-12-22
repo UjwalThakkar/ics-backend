@@ -240,14 +240,14 @@ class AuthController extends BaseController
 
         // Verify password
         if (!password_verify($data['password'], $user['password_hash'])) {
-            // Log failed login attempt
-            $this->logService->logUserActivity(
-                $user['user_id'],
-                'USER_LOGIN_FAILED',
-                ['reason' => 'invalid_password'],
-                $this->getClientIp(),
-                $this->getUserAgent()
-            );
+            // // Log failed login attempt
+            // $this->logService->logUserActivity(
+
+            //     'USER_LOGIN_FAILED',
+            //     ['reason' => 'invalid_password'],
+            //     $this->getClientIp(),
+            //     $this->getUserAgent()
+            // );
 
             return $this->error('Invalid credentials', 401);
         }

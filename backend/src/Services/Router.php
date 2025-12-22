@@ -11,6 +11,7 @@ use IndianConsular\Controllers\ServiceController;
 use IndianConsular\Controllers\VerificationCenterController;
 use IndianConsular\Controllers\AdminController;
 use IndianConsular\Controllers\CounterController;
+use IndianConsular\Controllers\ServiceDetailsController;
 use IndianConsular\Controllers\TimeSlotController;
 use IndianConsular\Controllers\VisaController;
 
@@ -166,6 +167,19 @@ class Router
             'GET /visa/country/{country_slug}'     => [VisaController::class, 'getCountryDetail'],
             'GET /visa/type'                   => [VisaController::class, 'getVisaTypeDetail'],
             'GET /visa/type/{visa_slug}'           => [VisaController::class, 'getVisaTypeDetail'],
+
+            // =============================================
+            // PUBLIC SERVICE DETAILS ROUTES
+            // =============================================
+            'GET /service-details/{serviceId}' => [ServiceDetailsController::class, 'get'],
+
+            // =============================================
+            // ADMIN SERVICE DETAILS ROUTES
+            // =============================================
+            'GET /admin/service-details' => [ServiceDetailsController::class, 'adminList'],
+            'POST /admin/service-details' => [ServiceDetailsController::class, 'adminCreate'],
+            'PUT /admin/service-details/{serviceId}' => [ServiceDetailsController::class, 'adminUpdate'],
+            'DELETE /admin/service-details/{serviceId}' => [ServiceDetailsController::class, 'adminDelete'],
         ];
     }
 
