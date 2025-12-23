@@ -22,6 +22,19 @@ class Router
     public function __construct()
     {
         $this->routes = [
+
+            'GET /test' => function ($requestData, $params) {
+                return [
+                    'status' => 200,
+                    'data' => [
+                        'success' => true,
+                        'message' => 'Backend deployment is working correctly!',
+                        'path' => '/test',
+                        'timestamp' => date('Y-m-d H:i:s')
+                    ]
+                ];
+            },
+
             // =============================================
             // AUTHENTICATION ROUTES
             // =============================================
