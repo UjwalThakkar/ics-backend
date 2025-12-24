@@ -142,7 +142,7 @@ class AuthController extends BaseController
             $this->logService->logAdminActivity(
                 'UNKNOWN',
                 'LOGIN_FAILED',
-                ['username' => $data['username'], 'reason' => 'user_not_found'],
+                ['email' => $data['email'], 'reason' => 'user_not_found'],
                 $this->getClientIp(),
                 $this->getUserAgent()
             );
@@ -190,6 +190,12 @@ class AuthController extends BaseController
 
         $token = $this->authService->generateToken($tokenData);
 
+        // Set HTTP-only cookie with JWT
+        $this->authService->setAuthCookie($token);
+        
+        // Generate CSRF token for frontend
+        $csrfToken = $this->authService->generateCsrfToken();
+
         // Update last login
         $this->adminUserModel->updateLastLogin($admin['admin_id']);
 
@@ -203,7 +209,8 @@ class AuthController extends BaseController
         );
 
         return $this->success([
-            'token' => $token,
+            'token' => $token,  // Keep for backward compatibility
+            'csrfToken' => $csrfToken,
             'type' => 'admin',
             'user' => [
                 'admin_id' => $admin['admin_id'],
@@ -274,6 +281,12 @@ class AuthController extends BaseController
 
         $token = $this->authService->generateToken($tokenData);
 
+        // Set HTTP-only cookie with JWT
+        $this->authService->setAuthCookie($token);
+        
+        // Generate CSRF token for frontend
+        $csrfToken = $this->authService->generateCsrfToken();
+
         // Log successful login
         $this->logService->logUserActivity(
             (string)$user['user_id'],
@@ -284,7 +297,8 @@ class AuthController extends BaseController
         );
 
         return $this->success([
-            'token' => $token,
+            'token' => $token,  // Keep for backward compatibility
+            'csrfToken' => $csrfToken,
             'type' => 'user',
             'user' => [
                 'user_id' => $user['user_id'],
@@ -306,40 +320,63 @@ class AuthController extends BaseController
      * Get current authenticated user info
      * GET /auth/me
      */
+    /**
+     * Get current authenticated user info (User or Admin)
+     * GET /auth/me
+     */
     public function me(array $data, array $params): array
     {
         $auth = $this->requireAuth($data);
 
-        if (!$auth || $auth['type'] !== 'user') {
+        if (!$auth) {
             return $this->error('Unauthorized', 401);
         }
 
         try {
-            $user = $this->userModel->findByUserId((int)$auth['id']);
-            if (!$user) {
-                return $this->error('User not found', 404);
+            if ($auth['type'] === 'admin') {
+                // Fetch admin details
+                $admin = $this->adminUserModel->findByAdminId($auth['id']);
+                if (!$admin) {
+                     return $this->error('Admin not found', 404);
+                }
+                
+                return $this->success([
+                    'type' => 'admin',
+                    'user' => [
+                        'admin_id' => $admin['admin_id'],
+                        'username' => $admin['username'],
+                        'email' => $admin['email'],
+                        'first_name' => $admin['first_name'],
+                        'last_name' => $admin['last_name'],
+                        'role' => $admin['role'],
+                        'permissions' => json_decode($admin['permissions'], true)
+                    ]
+                ]);
+            } else {
+                // Fetch user details
+                $user = $this->userModel->findByUserId((int)$auth['id']);
+                if (!$user) {
+                    return $this->error('User not found', 404);
+                }
+
+                return $this->success([
+                    'type' => 'user',
+                    'user' => [
+                        'userId' => $user['user_id'],
+                        'email' => $user['email'],
+                        'firstName' => $user['first_name'],
+                        'lastName' => $user['last_name'],
+                        'phoneNo' => $user['phone_no'],
+                        'gender' => $user['gender'],
+                        'dateOfBirth' => $user['date_of_birth'],
+                        'nationality' => $user['nationality'],
+                        'passportNo' => $user['passport_no'],
+                        'passportExpiry' => $user['passport_expiry'],
+                        'accountStatus' => $user['account_status'],
+                        'emailValidated' => (bool)$user['email_validated']
+                    ]
+                ]);
             }
-
-            // Remove sensitive data
-            unset($user['password_hash']);
-
-            return $this->success([
-                'type' => 'user',
-                'user' => [
-                    'userId' => $user['user_id'],
-                    'email' => $user['email'],
-                    'firstName' => $user['first_name'],
-                    'lastName' => $user['last_name'],
-                    'phoneNo' => $user['phone_no'],
-                    'gender' => $user['gender'],
-                    'dateOfBirth' => $user['date_of_birth'],
-                    'nationality' => $user['nationality'],
-                    'passportNo' => $user['passport_no'],
-                    'passportExpiry' => $user['passport_expiry'],
-                    'accountStatus' => $user['account_status'],
-                    'emailValidated' => (bool)$user['email_validated']
-                ]
-            ]);
         } catch (\Exception $e) {
             error_log("Get user info error: " . $e->getMessage());
             return $this->error('Failed to get user info', 500);
@@ -510,21 +547,34 @@ class AuthController extends BaseController
     }
 
     /**
-     * Logout (client-side token removal)
+     * Logout - clears auth cookies
      * POST /auth/logout
      */
     public function logout(array $data, array $params): array
     {
         $auth = $this->requireAuth($data);
 
-        if ($auth && $auth['type'] === 'user') {
-            $this->logService->logUserActivity(
-                (string)$auth['id'],
-                'USER_LOGOUT',
-                [],
-                $this->getClientIp(),
-                $this->getUserAgent()
-            );
+        // Clear HTTP-only cookies
+        $this->authService->clearAuthCookie();
+
+        if ($auth) {
+            if ($auth['type'] === 'user') {
+                $this->logService->logUserActivity(
+                    (string)$auth['id'],
+                    'USER_LOGOUT',
+                    [],
+                    $this->getClientIp(),
+                    $this->getUserAgent()
+                );
+            } elseif ($auth['type'] === 'admin') {
+                $this->logService->logAdminActivity(
+                    $auth['id'],
+                    'ADMIN_LOGOUT',
+                    [],
+                    $this->getClientIp(),
+                    $this->getUserAgent()
+                );
+            }
         }
 
         return $this->success([

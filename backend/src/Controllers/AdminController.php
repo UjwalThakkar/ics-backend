@@ -36,11 +36,10 @@ class AdminController extends BaseController
      */
     public function stats(array $data, array $params): array
     {
-        $admin = $this->requireAuth($data);
+        $admin = $this->requireAdminAuth($data);
         if (!$admin) {
             return $this->error('Unauthorized', 401);
         }
-        error_log('Admin data: ' . print_r($admin, true));
 
         
         try {

@@ -80,18 +80,43 @@ abstract class BaseController
     }
 
     /**
+     * Require admin authentication - returns admin data or null
+     * Use this for admin-only endpoints
+     */
+    protected function requireAdminAuth(array $data): ?array
+    {
+        $auth = $this->requireAuth($data);
+        
+        if (!$auth || ($auth['type'] ?? '') !== 'admin') {
+            return null;
+        }
+        
+        return $auth;
+    }
+
+    /**
+     * Require user authentication - returns user data or null
+     * Use this for user-only endpoints
+     */
+    protected function requireUserAuth(array $data): ?array
+    {
+        $auth = $this->requireAuth($data);
+        
+        if (!$auth || ($auth['type'] ?? '') !== 'user') {
+            return null;
+        }
+        
+        return $auth;
+    }
+
+    /**
      * Extract JWT token from request
+     * Enforces usage of HTTP-only cookie.
      */
     protected function extractToken(array $data): ?string
     {
-        $headers = $data['_headers'] ?? [];
-        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
-
-        if (strpos($authHeader, 'Bearer ') === 0) {
-            return substr($authHeader, 7);
-        }
-
-        return null;
+        // Only accept HTTP-only cookie
+        return $this->authService->getTokenFromCookie();
     }
 
     /**

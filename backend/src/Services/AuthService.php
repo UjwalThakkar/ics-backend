@@ -13,6 +13,8 @@ class AuthService
     private string $secretKey;
     private string $algorithm = 'HS256';
     private int $expiration = 86400; // 24 hours
+    private string $cookieName = 'ics_auth_token';
+    private string $csrfCookieName = 'ics_csrf_token';
 
     public function __construct()
     {
@@ -81,4 +83,98 @@ class AuthService
 
         return $this->generateToken($payload);
     }
+
+    /**
+     * Set JWT token in HTTP-only cookie
+     */
+    public function setAuthCookie(string $token): void
+    {
+        $isSecure = ($_ENV['APP_ENV'] ?? 'development') === 'production';
+        
+        setcookie($this->cookieName, $token, [
+            'expires' => time() + $this->expiration,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $isSecure,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+    }
+
+    /**
+     * Clear auth cookie (logout)
+     */
+    public function clearAuthCookie(): void
+    {
+        setcookie($this->cookieName, '', [
+            'expires' => time() - 3600,
+            'path' => '/',
+            'domain' => '',
+            'secure' => ($_ENV['APP_ENV'] ?? 'development') === 'production',
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+        
+        // Also clear CSRF cookie
+        setcookie($this->csrfCookieName, '', [
+            'expires' => time() - 3600,
+            'path' => '/',
+            'domain' => '',
+            'secure' => ($_ENV['APP_ENV'] ?? 'development') === 'production',
+            'httponly' => false,
+            'samesite' => 'Lax'
+        ]);
+    }
+
+    /**
+     * Get token from cookie
+     */
+    public function getTokenFromCookie(): ?string
+    {
+        return $_COOKIE[$this->cookieName] ?? null;
+    }
+
+    /**
+     * Generate CSRF token and set in cookie (readable by JS)
+     */
+    public function generateCsrfToken(): string
+    {
+        $csrfToken = bin2hex(random_bytes(32));
+        $isSecure = ($_ENV['APP_ENV'] ?? 'development') === 'production';
+        
+        // Set CSRF token in a readable cookie (not httponly)
+        setcookie($this->csrfCookieName, $csrfToken, [
+            'expires' => time() + $this->expiration,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $isSecure,
+            'httponly' => false,  // JS needs to read this
+            'samesite' => 'Lax'
+        ]);
+        
+        return $csrfToken;
+    }
+
+    /**
+     * Validate CSRF token from request header against cookie
+     */
+    public function validateCsrfToken(string $headerToken): bool
+    {
+        $cookieToken = $_COOKIE[$this->csrfCookieName] ?? '';
+        
+        if (empty($cookieToken) || empty($headerToken)) {
+            return false;
+        }
+        
+        return hash_equals($cookieToken, $headerToken);
+    }
+
+    /**
+     * Get cookie name (for reference)
+     */
+    public function getCookieName(): string
+    {
+        return $this->cookieName;
+    }
 }
+
