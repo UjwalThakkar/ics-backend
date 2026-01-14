@@ -14,6 +14,7 @@ use IndianConsular\Controllers\CounterController;
 use IndianConsular\Controllers\ServiceDetailsController;
 use IndianConsular\Controllers\TimeSlotController;
 use IndianConsular\Controllers\VisaController;
+use IndianConsular\Controllers\OcrController;
 
 class Router
 {
@@ -182,6 +183,12 @@ class Router
             'POST /admin/service-details' => [ServiceDetailsController::class, 'adminCreate'],
             'PUT /admin/service-details/{serviceId}' => [ServiceDetailsController::class, 'adminUpdate'],
             'DELETE /admin/service-details/{serviceId}' => [ServiceDetailsController::class, 'adminDelete'],
+
+            // =============================================
+            // OCR DOCUMENT EXTRACTION ROUTES
+            // =============================================
+            'POST /ocr/extract' => [OcrController::class, 'extractFromDocument'],
+            'GET /ocr/health' => [OcrController::class, 'health'],
         ];
     }
 
