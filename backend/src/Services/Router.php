@@ -195,6 +195,8 @@ class Router
             // MISCELLANEOUS APPLICATIONS ROUTES (User)
             // =============================================
             'POST /applications/miscellaneous/submit' => [ApplicationController::class, 'submitMiscellaneous'],
+            'GET /applications/miscellaneous/{applicationId}/filled-pdf' => [ApplicationController::class, 'downloadFilledPdf'],
+            'GET /applications/miscellaneous/{applicationId}/track' => [ApplicationController::class, 'trackMiscellaneous'],
 
             // =============================================
             // ADMIN MISCELLANEOUS APPLICATIONS ROUTES
@@ -205,6 +207,7 @@ class Router
             'PUT /admin/applications/miscellaneous/{id}' => [ApplicationController::class, 'adminUpdateMiscellaneous'],
             'GET /admin/applications/miscellaneous/{id}/files/{fileId}' => [ApplicationController::class, 'adminGetFile'],
             'GET /admin/applications/miscellaneous/{id}/files/{fileId}/download' => [ApplicationController::class, 'adminDownloadFile'],
+            'GET /admin/applications/miscellaneous/{id}/filled-pdf' => [ApplicationController::class, 'adminDownloadFilledPdf'],
         ];
     }
 
@@ -212,19 +215,29 @@ class Router
     {
         // Clean path
         $path = trim($path, '/');
+        
+        // Debug logging for route matching
+        error_log("Router: Handling {$method} /{$path}");
 
         // Try exact match first
         $routeKey = "{$method} /{$path}";
         if (isset($this->routes[$routeKey])) {
+            error_log("Router: Exact match found for: {$routeKey}");
             return $this->callController($this->routes[$routeKey], []);
         }
 
         // Try pattern matching for routes with parameters
         foreach ($this->routes as $pattern => $handler) {
+            $params = [];
             if ($this->matchRoute($method, $path, $pattern, $params)) {
+                error_log("Router: Pattern match found: {$pattern} with params: " . json_encode($params));
                 return $this->callController($handler, $params);
             }
         }
+
+        // Route not found - log available routes for debugging
+        error_log("Router: No route found for {$method} /{$path}");
+        error_log("Router: Available routes: " . implode(', ', array_keys($this->routes)));
 
         // Route not found
         return [
@@ -233,7 +246,12 @@ class Router
                 'success' => false,
                 'error' => 'Route not found',
                 'path' => $path,
-                'method' => $method
+                'method' => $method,
+                'debug' => [
+                    'cleaned_path' => $path,
+                    'route_key_tried' => $routeKey,
+                    'total_routes' => count($this->routes)
+                ]
             ]
         ];
     }
@@ -279,7 +297,18 @@ class Router
             $requestData = $this->getRequestData();
 
             // Call controller method
-            return $controller->$method($requestData, $params);
+            $result = $controller->$method($requestData, $params);
+            
+            // If method returns void (null), it means it handled the response directly (e.g., file download)
+            // In this case, we return a special marker that index.php will handle
+            if ($result === null) {
+                return [
+                    'status' => 200,
+                    'data' => ['_handled' => true] // Marker that response was already sent
+                ];
+            }
+            
+            return $result;
         } catch (\Exception $e) {
             error_log("Controller error: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());

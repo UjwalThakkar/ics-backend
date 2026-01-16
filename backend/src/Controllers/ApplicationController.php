@@ -10,6 +10,7 @@ use IndianConsular\Models\ApplicationFile;
 use IndianConsular\Models\Service;
 use IndianConsular\Models\User;
 use IndianConsular\Services\NotificationService;
+use IndianConsular\Services\PdfFormService;
 
 class ApplicationController extends BaseController
 {
@@ -19,6 +20,7 @@ class ApplicationController extends BaseController
     private Service $serviceModel;
     private User $userModel;
     private NotificationService $notificationService;
+    private PdfFormService $pdfService;
 
     public function __construct()
     {
@@ -29,6 +31,7 @@ class ApplicationController extends BaseController
         $this->serviceModel = new Service();
         $this->userModel = new User();
         $this->notificationService = new NotificationService();
+        $this->pdfService = new PdfFormService();
     }
 
     /**
@@ -233,6 +236,22 @@ class ApplicationController extends BaseController
                 $uploadedFiles = $this->handleFileUploads($applicationId, (int)$user['id'], $data['_files']);
             }
 
+            // Generate filled PDF form
+            $filledPdfPath = null;
+            try {
+                $filledPdfPath = $this->pdfService->fillPdfForm($formData, $applicationId);
+                if ($filledPdfPath) {
+                    // Update application with filled PDF path
+                    $this->miscApplicationModel->updateBy('application_id', $applicationId, [
+                        'filled_pdf_path' => $filledPdfPath,
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the submission
+                error_log("PDF generation failed for application {$applicationId}: " . $e->getMessage());
+            }
+
             // Log user activity
             $this->logService->logUserActivity(
                 (string)$user['id'],
@@ -249,7 +268,9 @@ class ApplicationController extends BaseController
                 'status' => 'submitted',
                 'message' => 'Application submitted successfully',
                 'files_uploaded' => count($uploadedFiles),
-                'service_title' => $service['title']
+                'service_title' => $service['title'],
+                'filled_pdf_path' => $filledPdfPath,
+                'filled_pdf_url' => $filledPdfPath ? $this->getFilledPdfUrl($filledPdfPath) : null
             ], 201);
 
         } catch (\Exception $e) {
@@ -421,12 +442,25 @@ class ApplicationController extends BaseController
             $total = $this->miscApplicationModel->countWithFilters($filters);
 
             // Parse form_data JSON for each application
+            // IMPORTANT: Preserve direct columns (like status) and don't let form_data overwrite them
             foreach ($applications as &$app) {
                 if (!empty($app['form_data'])) {
                     $formData = json_decode($app['form_data'], true);
                     if ($formData) {
+                        // Preserve direct columns before merging
+                        $directColumns = ['id', 'application_id', 'user_id', 'service_id', 'status', 'submitted_at', 'updated_at', 'admin_notes', 'filled_pdf_path', 'service_title', 'service_category', 'user_first_name', 'user_last_name', 'user_email', 'file_count'];
+                        $preservedValues = [];
+                        foreach ($directColumns as $col) {
+                            if (isset($app[$col])) {
+                                $preservedValues[$col] = $app[$col];
+                            }
+                        }
                         // Merge form_data fields into application object for easier access
                         $app = array_merge($app, $formData);
+                        // Restore preserved values (form_data should not overwrite direct columns)
+                        foreach ($preservedValues as $col => $value) {
+                            $app[$col] = $value;
+                        }
                     }
                 }
             }
@@ -470,10 +504,23 @@ class ApplicationController extends BaseController
             }
 
             // Parse and merge form_data JSON
+            // IMPORTANT: Preserve direct columns (like status) and don't let form_data overwrite them
             if (!empty($application['form_data'])) {
                 $formData = json_decode($application['form_data'], true);
                 if ($formData) {
+                    // Merge form_data but preserve direct columns
+                    $directColumns = ['id', 'application_id', 'user_id', 'service_id', 'status', 'submitted_at', 'updated_at', 'admin_notes', 'filled_pdf_path'];
+                    $preservedValues = [];
+                    foreach ($directColumns as $col) {
+                        if (isset($application[$col])) {
+                            $preservedValues[$col] = $application[$col];
+                        }
+                    }
                     $application = array_merge($application, $formData);
+                    // Restore preserved values (form_data should not overwrite direct columns)
+                    foreach ($preservedValues as $col => $value) {
+                        $application[$col] = $value;
+                    }
                 }
             }
 
@@ -560,6 +607,20 @@ class ApplicationController extends BaseController
                 }
             }
 
+            // Debug logging for status updates and validation
+            if (isset($data['status'])) {
+                $oldStatus = $application['status'] ?? 'NULL';
+                $newStatus = $data['status'];
+                error_log("Admin updating application {$applicationId} status from '{$oldStatus}' to '{$newStatus}'");
+                
+                // Validate status matches database enum: 'submitted','in-progress','approved','rejected','completed'
+                $validStatuses = ['submitted', 'in-progress', 'approved', 'rejected', 'completed'];
+                if (!in_array($newStatus, $validStatuses)) {
+                    error_log("WARNING: Invalid status '{$newStatus}' for application {$applicationId}. Valid statuses: " . implode(', ', $validStatuses));
+                    // Don't reject, but log the warning - the database enum will enforce it anyway
+                }
+            }
+
             // If form_data was updated, encode and add to updateData
             if ($formDataUpdated) {
                 $updateData['form_data'] = json_encode($currentFormData, JSON_UNESCAPED_UNICODE);
@@ -571,7 +632,16 @@ class ApplicationController extends BaseController
 
             $updateData['updated_at'] = date('Y-m-d H:i:s');
 
-            $this->miscApplicationModel->updateBy('application_id', $applicationId, $updateData);
+            // Perform the update
+            $rowsAffected = $this->miscApplicationModel->updateBy('application_id', $applicationId, $updateData);
+            
+            // Verify the update
+            $updatedApplication = $this->miscApplicationModel->findByApplicationId($applicationId);
+            if ($updatedApplication) {
+                error_log("Application {$applicationId} status after update: '{$updatedApplication['status']}'");
+            } else {
+                error_log("WARNING: Could not verify update for application {$applicationId}");
+            }
 
             // Log admin activity
             $this->logService->logAdminActivity(
@@ -588,6 +658,185 @@ class ApplicationController extends BaseController
         } catch (\Exception $e) {
             error_log("Admin update application error: " . $e->getMessage());
             return $this->error('Failed to update application', 500);
+        }
+    }
+
+    /**
+     * Download filled PDF form
+     * GET /applications/miscellaneous/{applicationId}/filled-pdf
+     * 
+     * Note: This method sends file directly and exits, bypassing normal JSON response
+     */
+    public function downloadFilledPdf(array $data, array $params): ?array
+    {
+        $user = $this->requireUserAuth($data);
+        if (!$user) {
+            http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Authentication required']);
+            exit;
+        }
+
+        $applicationId = $params['applicationId'] ?? $params['id'] ?? '';
+        if (empty($applicationId)) {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Application ID is required']);
+            exit;
+        }
+
+        try {
+            $application = $this->miscApplicationModel->findByApplicationId($applicationId);
+            if (!$application) {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Application not found']);
+                exit;
+            }
+
+            // Verify user owns this application
+            if ($application['user_id'] != $user['id']) {
+                http_response_code(403);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Unauthorized access to this application']);
+                exit;
+            }
+
+            $filledPdfPath = $application['filled_pdf_path'] ?? null;
+            if (empty($filledPdfPath)) {
+                // Try to generate it if it doesn't exist
+                $formData = json_decode($application['form_data'] ?? '{}', true);
+                if ($formData) {
+                    $filledPdfPath = $this->pdfService->fillPdfForm($formData, $applicationId);
+                    if ($filledPdfPath) {
+                        $this->miscApplicationModel->updateBy('application_id', $applicationId, [
+                            'filled_pdf_path' => $filledPdfPath
+                        ]);
+                    }
+                }
+            }
+
+            if (empty($filledPdfPath)) {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Filled PDF not available. Please contact support.']);
+                exit;
+            }
+
+            // Get full file path
+            $fullPath = __DIR__ . '/../../public' . $filledPdfPath;
+            if (!file_exists($fullPath)) {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'PDF file not found']);
+                exit;
+            }
+
+            // Send file download response
+            // Clear any previous output
+            if (ob_get_level()) {
+                ob_clean();
+            }
+            
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="' . basename($filledPdfPath) . '"');
+            header('Content-Length: ' . filesize($fullPath));
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            
+            readfile($fullPath);
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Download filled PDF error: " . $e->getMessage());
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Failed to download PDF']);
+            exit;
+        }
+    }
+
+    /**
+     * Download filled PDF form (Admin)
+     * GET /admin/applications/miscellaneous/{id}/filled-pdf
+     */
+    public function adminDownloadFilledPdf(array $data, array $params): ?array
+    {
+        $admin = $this->requireAdminAuth($data);
+        if (!$admin) {
+            http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+            exit;
+        }
+
+        $applicationId = $params['id'] ?? '';
+        if (empty($applicationId)) {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Application ID is required']);
+            exit;
+        }
+
+        try {
+            $application = $this->miscApplicationModel->findByApplicationId($applicationId);
+            if (!$application) {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Application not found']);
+                exit;
+            }
+
+            $filledPdfPath = $application['filled_pdf_path'] ?? null;
+            if (empty($filledPdfPath)) {
+                // Try to generate it if it doesn't exist
+                $formData = json_decode($application['form_data'] ?? '{}', true);
+                if ($formData) {
+                    $filledPdfPath = $this->pdfService->fillPdfForm($formData, $applicationId);
+                    if ($filledPdfPath) {
+                        $this->miscApplicationModel->updateBy('application_id', $applicationId, [
+                            'filled_pdf_path' => $filledPdfPath
+                        ]);
+                    }
+                }
+            }
+
+            if (empty($filledPdfPath)) {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Filled PDF not available']);
+                exit;
+            }
+
+            // Get full file path
+            $fullPath = __DIR__ . '/../../public' . $filledPdfPath;
+            if (!file_exists($fullPath)) {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'PDF file not found']);
+                exit;
+            }
+
+            // Send file download response
+            if (ob_get_level()) {
+                ob_clean();
+            }
+            
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="' . basename($filledPdfPath) . '"');
+            header('Content-Length: ' . filesize($fullPath));
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            
+            readfile($fullPath);
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Admin download filled PDF error: " . $e->getMessage());
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Failed to download PDF']);
+            exit;
         }
     }
 
@@ -680,5 +929,189 @@ class ApplicationController extends BaseController
             error_log("Admin get stats error: " . $e->getMessage());
             return $this->error('Failed to load statistics', 500);
         }
+    }
+
+    /**
+     * Track miscellaneous application (User)
+     * GET /applications/miscellaneous/{applicationId}/track
+     */
+    public function trackMiscellaneous(array $data, array $params): array
+    {
+        // Debug logging
+        error_log("trackMiscellaneous called with params: " . json_encode($params));
+        error_log("Request data: " . json_encode($data));
+        
+        $applicationId = $params['applicationId'] ?? $params['id'] ?? '';
+        
+        if (empty($applicationId)) {
+            error_log("trackMiscellaneous: Application ID is empty");
+            return $this->error('Application ID is required', 400);
+        }
+
+        error_log("trackMiscellaneous: Looking for application ID: " . $applicationId);
+
+        try {
+            $application = $this->miscApplicationModel->findByApplicationId($applicationId);
+            
+            if (!$application) {
+                error_log("trackMiscellaneous: Application not found for ID: " . $applicationId);
+                return $this->error('Application not found', 404);
+            }
+            
+            error_log("trackMiscellaneous: Application found: " . json_encode($application));
+
+            // Get service details for processing time
+            $service = $this->serviceModel->findByServiceId($application['service_id']);
+            
+            // Get the current status from database (ensure we have the latest)
+            // Handle NULL status (database enum allows NULL, default to 'submitted')
+            $currentStatus = $application['status'] ?? 'submitted';
+            if (empty($currentStatus) || $currentStatus === 'NULL' || $currentStatus === null) {
+                $currentStatus = 'submitted';
+            }
+            
+            // Debug logging
+            error_log("trackMiscellaneous: Application ID: {$applicationId}, Status: {$currentStatus}, Updated At: " . ($application['updated_at'] ?? 'N/A'));
+            
+            // Calculate expected completion date
+            $submittedDate = new \DateTime($application['submitted_at']);
+            $expectedCompletion = $this->calculateExpectedCompletion($submittedDate, $service['processing_time'] ?? null);
+            
+            // Generate processing timeline based on status
+            $timeline = $this->generateProcessingTimeline($currentStatus, $application['submitted_at'], $application['updated_at']);
+
+            return $this->success([
+                'application_id' => $application['application_id'],
+                'status' => $currentStatus, // Use the explicitly retrieved status
+                'service_type' => $service['title'] ?? 'Miscellaneous Service',
+                'submitted_at' => $application['submitted_at'],
+                'expected_completion' => $expectedCompletion,
+                'timeline' => $timeline,
+                'admin_notes' => $application['admin_notes'] ?? null // Include admin notes if any
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Track miscellaneous application error: " . $e->getMessage());
+            return $this->error('Failed to track application', 500);
+        }
+    }
+
+    /**
+     * Calculate expected completion date based on processing time
+     */
+    private function calculateExpectedCompletion(\DateTime $submittedDate, ?string $processingTime): string
+    {
+        // Default to 1 week if processing time not available
+        $daysToAdd = 7;
+        
+        if ($processingTime) {
+            // Try to extract days from processing time string (e.g., "5-7 working days", "2 weeks", "10 days")
+            if (preg_match('/(\d+)\s*(?:-|\s*to\s*)?(\d+)?\s*(?:working\s*)?days?/i', $processingTime, $matches)) {
+                $daysToAdd = isset($matches[2]) && !empty($matches[2]) 
+                    ? (int)max($matches[1], $matches[2]) // Use the higher number if range
+                    : (int)$matches[1];
+            } elseif (preg_match('/(\d+)\s*weeks?/i', $processingTime, $matches)) {
+                $daysToAdd = (int)$matches[1] * 7;
+            } elseif (preg_match('/(\d+)\s*months?/i', $processingTime, $matches)) {
+                $daysToAdd = (int)$matches[1] * 30;
+            }
+        }
+        
+        $expectedDate = clone $submittedDate;
+        $expectedDate->modify("+{$daysToAdd} days");
+        
+        return $expectedDate->format('Y-m-d');
+    }
+
+    /**
+     * Generate processing timeline based on status
+     */
+    private function generateProcessingTimeline(string $status, string $submittedAt, ?string $updatedAt): array
+    {
+        // Simplified timeline: Application Submitted, In Process, Accepted/Rejected, Completed
+        $stages = [
+            [
+                'name' => 'Application Submitted',
+                'completed' => true,
+                'current' => false,
+                'date' => $submittedAt
+            ],
+            [
+                'name' => 'In Process',
+                'completed' => false,
+                'current' => false
+            ],
+            [
+                'name' => 'Accepted/Rejected',
+                'completed' => false,
+                'current' => false
+            ],
+            [
+                'name' => 'Completed',
+                'completed' => false,
+                'current' => false
+            ]
+        ];
+
+        // Map status to timeline stages
+        // Database enum values: 'submitted','in-progress','approved','rejected','completed'
+        $statusMap = [
+            'submitted' => ['current' => 1], // In Process (current stage)
+            'in-progress' => ['current' => 1], // In Process (current stage)
+            'in_progress' => ['current' => 1], // Support underscore variant
+            'approved' => ['completed' => [1], 'current' => 2, 'label' => 'Accepted'], // Accepted/Rejected (current stage) - show as "Accepted"
+            'rejected' => ['completed' => [1], 'current' => 2, 'label' => 'Rejected'], // Accepted/Rejected (current stage) - show as "Rejected"
+            'completed' => ['completed' => [0, 1, 2, 3], 'current' => null], // All completed
+            // Legacy/alternative status names for backward compatibility
+            'under_review' => ['current' => 1], // Maps to in-progress
+            'processing' => ['current' => 1], // Maps to in-progress
+            'ready_for_collection' => ['completed' => [1], 'current' => 2, 'label' => 'Accepted'], // Maps to approved
+            'cancelled' => ['completed' => [1], 'current' => 2, 'label' => 'Rejected'] // Maps to rejected
+        ];
+
+        $statusConfig = $statusMap[$status] ?? $statusMap['submitted'];
+        
+        // Mark completed stages
+        if (isset($statusConfig['completed'])) {
+            foreach ($statusConfig['completed'] as $index) {
+                if (isset($stages[$index])) {
+                    $stages[$index]['completed'] = true;
+                    $stages[$index]['current'] = false;
+                    if ($updatedAt && $index > 0) {
+                        $stages[$index]['date'] = $updatedAt;
+                    }
+                }
+            }
+        }
+        
+        // Mark current stage
+        if (isset($statusConfig['current']) && $statusConfig['current'] !== null) {
+            $currentIndex = $statusConfig['current'];
+            if (isset($stages[$currentIndex])) {
+                $stages[$currentIndex]['current'] = true;
+                $stages[$currentIndex]['completed'] = false;
+                
+                // Update stage name if label is provided (for Accepted/Rejected)
+                if (isset($statusConfig['label'])) {
+                    $stages[$currentIndex]['name'] = $statusConfig['label'];
+                }
+                
+                // Add date to current stage if updated_at is available
+                if ($updatedAt && $currentIndex > 0) {
+                    $stages[$currentIndex]['date'] = $updatedAt;
+                }
+            }
+        }
+
+        return $stages;
+    }
+
+    /**
+     * Get filled PDF URL
+     */
+    private function getFilledPdfUrl(string $path): string
+    {
+        $baseUrl = $_ENV['API_BASE_URL'] ?? 'http://localhost';
+        return rtrim($baseUrl, '/') . $path;
     }
 }

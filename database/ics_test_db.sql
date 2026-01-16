@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 14, 2026 at 03:37 PM
+-- Generation Time: Jan 16, 2026 at 04:29 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -157,7 +157,45 @@ INSERT INTO `admin_logs` (`id`, `log_id`, `admin_id`, `action`, `details`, `ip_a
 (110, 'LOG2026011443292726', '3', 'CREATE_SERVICE_DETAILS', '{\"service_id\":12}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'service_details', '12', '2026-01-14 08:45:39'),
 (111, 'LOG202601148346334A', '3', 'ADMIN_LOGOUT', '[]', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-14 09:30:50'),
 (112, 'LOG202601141513C4EC', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-14 09:31:42'),
-(113, 'LOG20260114A4373DC3', '3', 'APPOINTMENT_STATUS_UPDATE', '{\"appointment_id\":\"12\",\"new_status\":\"no-show\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'appointment', '12', '2026-01-14 09:33:42');
+(113, 'LOG20260114A4373DC3', '3', 'APPOINTMENT_STATUS_UPDATE', '{\"appointment_id\":\"12\",\"new_status\":\"no-show\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'appointment', '12', '2026-01-14 09:33:42'),
+(114, 'LOG20260115C9364287', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:03:50'),
+(115, 'LOG20260115900E1FB8', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:04:36'),
+(116, 'LOG202601151CAD3312', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:06:39'),
+(117, 'LOG20260115B9237A8E', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:10:25'),
+(118, 'LOG2026011501E8D78A', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:10:56'),
+(119, 'LOG20260115115D2CE1', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:14:42'),
+(120, 'LOG20260115FC818ECA', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 05:06:20'),
+(121, 'LOG202601150DBBF238', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'PostmanRuntime/7.51.0', '', '', '2026-01-15 06:30:38'),
+(122, 'LOG202601151A6090B1', '3', 'CREATE_COUNTER', '{\"counter_id\":4,\"name\":\"Counter D - Document Authentication\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'counter', '4', '2026-01-15 07:00:43'),
+(123, 'LOG20260115E4C8CDF0', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 17:16:37'),
+(124, 'LOG20260115403FB3F6', '3', 'CREATE_SERVICE', '{\"service_id\":13,\"title\":\"Marriage Certificate\",\"centers\":[1]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'service', '13', '2026-01-15 17:22:52'),
+(125, 'LOG202601156C2D8FC6', '3', 'UPDATE_SERVICE', '{\"service_id\":\"13\",\"updates\":[\"category\",\"title\",\"description\",\"fees\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'service', '13', '2026-01-15 17:23:32'),
+(126, 'LOG202601151B586162', '3', 'UPDATE_SERVICE', '{\"service_id\":\"13\",\"updates\":[\"category\",\"title\",\"description\",\"fees\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'service', '13', '2026-01-15 17:34:17'),
+(127, 'LOG20260115033936FD', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 18:21:18'),
+(128, 'LOG20260115C6B52FA3', '3', 'DELETE_SERVICE', '{\"service_id\":\"13\",\"title\":\"Marriage Certificate\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'service', '13', '2026-01-15 18:26:36'),
+(129, 'LOG20260116232B6991', '3', 'CREATE_SERVICE', '{\"service_id\":14,\"title\":\"Marriage Certificate\",\"centers\":[1]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'service', '14', '2026-01-15 19:08:38'),
+(130, 'LOG2026011675B9FA01', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-16 08:28:15'),
+(131, 'LOG202601168A9467AD', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-16 09:25:48'),
+(132, 'LOG202601162C6F9947', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:26:08'),
+(133, 'LOG2026011630443591', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:26:32'),
+(134, 'LOG202601164D193391', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC20260116FC717B77\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC20260116FC717B77', '2026-01-16 09:32:15'),
+(135, 'LOG20260116DE8399C4', '3', 'LOGIN_SUCCESS', '{\"method\":\"2FA_completed\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-16 09:34:31'),
+(136, 'LOG202601166DA2FE0D', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC20260116FC717B77\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC20260116FC717B77', '2026-01-16 09:34:50'),
+(137, 'LOG202601162BE15E0C', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC20260116FC717B77\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC20260116FC717B77', '2026-01-16 09:35:27'),
+(138, 'LOG2026011600B754FA', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC20260116FC717B77\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC20260116FC717B77', '2026-01-16 09:41:07'),
+(139, 'LOG20260116DD4C65A6', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:41:53'),
+(140, 'LOG2026011666642AC7', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:42:04'),
+(141, 'LOG2026011605DE49EC', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC20260116FC717B77\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC20260116FC717B77', '2026-01-16 09:42:14'),
+(142, 'LOG202601169B96E9A4', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:44:07'),
+(143, 'LOG20260116AB844051', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:48:43'),
+(144, 'LOG20260116F076333B', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:48:54'),
+(145, 'LOG2026011637D0D550', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:49:11'),
+(146, 'LOG202601168C690620', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:55:42'),
+(147, 'LOG20260116E2EBF60C', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:55:51'),
+(148, 'LOG202601161460628E', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"admin_notes\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:56:07'),
+(149, 'LOG2026011674EBBF60', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"admin_notes\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 09:59:54'),
+(150, 'LOG202601160FDD33B1', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"admin_notes\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 10:00:05'),
+(151, 'LOG2026011696AB7340', '3', 'UPDATE_MISCELLANEOUS_APPLICATION', '{\"application_id\":\"MISC202601168E18F3AA\",\"updates\":[\"status\",\"admin_notes\",\"form_data\",\"updated_at\"]}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 10:00:53');
 
 -- --------------------------------------------------------
 
@@ -189,7 +227,28 @@ CREATE TABLE `admin_users` (
 INSERT INTO `admin_users` (`id`, `admin_id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `permissions`, `last_login`, `is_active`, `two_factor_secret`, `created_at`, `updated_at`) VALUES
 (1, 'ADMIN001', 'officer123', 'admin@consular.gov.in', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System', 'Administrator', 'admin', '[\"all\"]', NULL, 1, NULL, '2025-11-05 13:53:27', '2025-11-05 13:53:27'),
 (2, 'OFF001', 'officer456', 'officer@consular.gov.in', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Consular', 'Officer', 'officer', '[\"applications\", \"appointments\"]', NULL, 1, NULL, '2025-11-05 13:53:27', '2025-11-05 13:53:27'),
-(3, '3', 'ujwaladmin', 'ujwalthakkar020@gmail.com', '$2y$10$H/4k9jiWeHFJJZmphv1xcOp5vRgHAh07eKy3nLJvQCPBA5lNvmRpa', 'ujwal', 'thakkar', 'admin', '[\"all\"]', '2026-01-14 09:31:42', 1, NULL, '2025-11-10 12:05:04', '2026-01-14 14:01:42');
+(3, '3', 'ujwaladmin', 'ujwalthakkar020@gmail.com', '$2y$10$H/4k9jiWeHFJJZmphv1xcOp5vRgHAh07eKy3nLJvQCPBA5lNvmRpa', 'ujwal', 'thakkar', 'admin', '[\"all\"]', '2026-01-16 09:34:31', 1, NULL, '2025-11-10 12:05:04', '2026-01-16 14:04:31');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `application_files`
+--
+
+CREATE TABLE `application_files` (
+  `id` int(11) NOT NULL,
+  `file_id` varchar(50) NOT NULL,
+  `application_id` varchar(50) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `original_name` varchar(255) NOT NULL,
+  `file_path` varchar(500) NOT NULL,
+  `file_type` varchar(100) DEFAULT NULL,
+  `file_size` bigint(20) DEFAULT NULL COMMENT 'Size in bytes',
+  `mime_type` varchar(100) DEFAULT NULL,
+  `document_type` varchar(100) DEFAULT NULL COMMENT 'Type of document (passport, birth_certificate, etc.)',
+  `uploaded_by` int(11) DEFAULT NULL COMMENT 'User ID who uploaded',
+  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -269,7 +328,28 @@ CREATE TABLE `counter` (
 INSERT INTO `counter` (`counter_id`, `center_id`, `counter_name`, `service_handled`, `is_active`, `updated_at`) VALUES
 (1, 1, 'Counter A - Visa Services', '[1, 2]', 1, '2025-11-26 11:55:02'),
 (2, 1, 'Counter B - Visa Services', '[1, 2]', 1, '2025-11-26 12:56:32'),
-(3, 1, 'Counter C - Passport Services', '[12,11]', 1, '2025-11-26 08:27:27');
+(3, 1, 'Counter C - Passport Services', '[12,11]', 1, '2025-11-26 08:27:27'),
+(4, 1, 'Counter D - Document Authentication', '[3]', 1, '2026-01-15 11:30:43');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `miscellaneous_applications`
+--
+
+CREATE TABLE `miscellaneous_applications` (
+  `id` int(11) NOT NULL,
+  `application_id` varchar(50) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `service_id` int(11) NOT NULL,
+  `form_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`form_data`)),
+  `filled_pdf_path` varchar(500) DEFAULT NULL,
+  `status` enum('submitted','in-progress','approved','rejected','completed') DEFAULT 'submitted',
+  `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `admin_notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -370,7 +450,8 @@ INSERT INTO `service` (`service_id`, `category`, `title`, `description`, `proces
 (2, 'Visa', 'Business Visa', 'Application for business visa', '7-10 business days', '[{\"type\":\"standard\",\"amount\":75},{\"type\":\"express\",\"amount\":150}]', '[\"Passport copy\", \"Photograph\", \"Business invitation letter\"]', '[\"Valid passport\", \"Business registration\"]', 1, 2, '2025-11-08 13:08:00', '2025-12-19 03:48:39'),
 (3, 'Document Verification', 'Document Authentication', 'Authentication of official documents', '3-5 business days', '[{\"type\":\"standard\", \"amount\": 75}, {\"type\":\"express\", \"amount\": 150}]', '[\"Original documents\", \"ID proof\"]', '[\"Documents must be original\"]', 1, 3, '2025-11-08 13:08:00', '2025-11-13 18:12:53'),
 (11, 'Passport', 'Passport Renewal', 'Renew your passport', '4-6 weeks', '[{\"type\":\"standard\",\"amount\":100}]', '[\"Old passport\",\"Photos\"]', '[\"Citizen\"]', 1, 1, '2025-11-26 05:46:37', '2025-11-26 05:46:37'),
-(12, 'Passport', 'new passport', 'apply for a new passport', '4-6 weeks', '[{\"type\":\"standard\",\"amount\":150}]', '[\"Photo\",\"Id\",\"Address proof\"]', '[\"Age 18+\"]', 1, 1, '2025-11-26 06:52:21', '2025-11-26 06:57:55');
+(12, 'Passport', 'new passport', 'apply for a new passport', '4-6 weeks', '[{\"type\":\"standard\",\"amount\":150}]', '[\"Photo\",\"Id\",\"Address proof\"]', '[\"Age 18+\"]', 1, 1, '2025-11-26 06:52:21', '2025-11-26 06:57:55'),
+(14, 'Miscellaneous', 'Marriage Certificate', 'Apply for Marriage Certificate', '1 week', '[{\"type\":\"standard\",\"amount\":450}]', '[\"Passport\",\"Visa\",\"Address Proof\"]', '[\"Any\"]', 1, 99, '2026-01-15 19:08:38', '2026-01-15 19:08:38');
 
 -- --------------------------------------------------------
 
@@ -560,7 +641,20 @@ INSERT INTO `user_logs` (`id`, `log_id`, `user_id`, `action`, `details`, `ip_add
 (47, 'LOG20260114EB89BF23', '1', 'USER_LOGIN_SUCCESS', '{\"method\":\"password\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-14 08:32:24'),
 (48, 'LOG20260114DEDDA0FE', 'UNKNOWN', 'USER_LOGIN_FAILED', '{\"email\":null,\"reason\":\"user_not_found\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-14 09:31:11'),
 (49, 'LOG2026011404FB9A0E', '1', 'USER_LOGIN_SUCCESS', '{\"method\":\"password\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-14 09:31:32'),
-(50, 'LOG202601149799A874', '1', 'BOOKING_CREATED', '{\"booking_id\":8,\"appointment_id\":13,\"service_id\":1,\"date\":\"2026-01-19\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-14 09:37:19');
+(50, 'LOG202601149799A874', '1', 'BOOKING_CREATED', '{\"booking_id\":8,\"appointment_id\":13,\"service_id\":1,\"date\":\"2026-01-19\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-14 09:37:19'),
+(51, 'LOG202601159F351E4C', 'UNKNOWN', 'USER_LOGIN_FAILED', '{\"email\":null,\"reason\":\"user_not_found\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:04:58'),
+(52, 'LOG2026011518DF0E9F', '1', 'USER_LOGIN_SUCCESS', '{\"method\":\"password\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:43:46'),
+(53, 'LOG20260115DB06E2E0', '1', 'USER_LOGIN_SUCCESS', '{\"method\":\"password\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:57:43'),
+(54, 'LOG202601154609570B', '1', 'USER_LOGIN_SUCCESS', '{\"method\":\"password\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 04:58:13'),
+(55, 'LOG20260115E13330A6', '1', 'USER_LOGIN_SUCCESS', '{\"method\":\"password\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-15 05:05:46'),
+(56, 'LOG202601163FEAEC35', '1', 'MISCELLANEOUS_APPLICATION_SUBMITTED', '{\"application_id\":\"MISC2026011682534D8D\",\"service_id\":\"14\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC2026011682534D8D', '2026-01-15 19:57:49'),
+(57, 'LOG20260116E33C0990', '1', 'USER_LOGIN_SUCCESS', '{\"method\":\"password\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', '', '', '2026-01-16 08:14:39'),
+(58, 'LOG20260116AF115419', '1', 'MISCELLANEOUS_APPLICATION_SUBMITTED', '{\"application_id\":\"MISC202601164EEDC8BC\",\"service_id\":\"14\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601164EEDC8BC', '2026-01-16 08:18:48'),
+(59, 'LOG20260116AC014B47', '1', 'MISCELLANEOUS_APPLICATION_SUBMITTED', '{\"application_id\":\"MISC20260116A4C524CC\",\"service_id\":\"14\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC20260116A4C524CC', '2026-01-16 08:44:50'),
+(60, 'LOG2026011663F5342A', '1', 'MISCELLANEOUS_APPLICATION_SUBMITTED', '{\"application_id\":\"MISC2026011650A5D60A\",\"service_id\":\"14\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC2026011650A5D60A', '2026-01-16 08:49:50'),
+(61, 'LOG202601169F7E2610', '1', 'MISCELLANEOUS_APPLICATION_SUBMITTED', '{\"application_id\":\"MISC2026011649107AB7\",\"service_id\":\"14\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC2026011649107AB7', '2026-01-16 08:51:55'),
+(62, 'LOG20260116CEC05A55', '1', 'MISCELLANEOUS_APPLICATION_SUBMITTED', '{\"application_id\":\"MISC20260116FC717B77\",\"service_id\":\"14\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC20260116FC717B77', '2026-01-16 08:55:32'),
+(63, 'LOG202601162290F846', '1', 'MISCELLANEOUS_APPLICATION_SUBMITTED', '{\"application_id\":\"MISC202601168E18F3AA\",\"service_id\":\"14\"}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', 'miscellaneous_application', 'MISC202601168E18F3AA', '2026-01-16 08:57:37');
 
 -- --------------------------------------------------------
 
@@ -594,21 +688,7 @@ CREATE TABLE `verification_center` (
 --
 
 INSERT INTO `verification_center` (`center_id`, `name`, `address`, `city`, `state`, `country`, `postal_code`, `phone`, `email`, `operating_hours`, `provides_services`, `has_counters`, `latitude`, `longitude`, `is_active`, `display_order`, `created_at`, `updated_at`) VALUES
-(1, 'Central Verification Center', '123 Main Street', 'Mumbai', 'Maharashtra', 'India', '400001', '+91-22-12345678', 'central@verification.com', '{\"monday\": \"09:00-17:00\", \"tuesday\": \"09:00-17:00\", \"wednesday\": \"09:00-17:00\", \"thursday\": \"09:00-17:00\", \"friday\": \"09:00-17:00\", \"saturday\": \"09:00-13:00\"}', '[1,2,3,11,12]', '[1, 2, 3]', 19.07600000, 72.87770000, 1, 1, '2025-11-08 13:08:00', '2025-11-26 11:22:21');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `visa_checklist_items`
---
-
-CREATE TABLE `visa_checklist_items` (
-  `id` int(11) NOT NULL,
-  `visa_type_id` int(11) NOT NULL,
-  `item_text` text NOT NULL,
-  `is_mandatory` tinyint(1) DEFAULT 1,
-  `display_order` int(11) DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+(1, 'Central Verification Center', '123 Main Street', 'Mumbai', 'Maharashtra', 'India', '400001', '+91-22-12345678', 'central@verification.com', '{\"monday\": \"09:00-17:00\", \"tuesday\": \"09:00-17:00\", \"wednesday\": \"09:00-17:00\", \"thursday\": \"09:00-17:00\", \"friday\": \"09:00-17:00\", \"saturday\": \"09:00-13:00\"}', '[1,2,3,11,12,13,14]', '[1,2,3,4]', 19.07600000, 72.87770000, 1, 1, '2025-11-08 13:08:00', '2026-01-15 23:38:38');
 
 -- --------------------------------------------------------
 
@@ -729,6 +809,16 @@ ALTER TABLE `admin_users`
   ADD KEY `idx_role` (`role`);
 
 --
+-- Indexes for table `application_files`
+--
+ALTER TABLE `application_files`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `file_id` (`file_id`),
+  ADD KEY `idx_application_id` (`application_id`),
+  ADD KEY `idx_document_type` (`document_type`),
+  ADD KEY `idx_uploaded_by` (`uploaded_by`);
+
+--
 -- Indexes for table `appointment`
 --
 ALTER TABLE `appointment`
@@ -757,6 +847,17 @@ ALTER TABLE `counter`
   ADD PRIMARY KEY (`counter_id`),
   ADD KEY `idx_counter_center` (`center_id`),
   ADD KEY `idx_counter_active` (`is_active`);
+
+--
+-- Indexes for table `miscellaneous_applications`
+--
+ALTER TABLE `miscellaneous_applications`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `application_id` (`application_id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_service_id` (`service_id`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_submitted_at` (`submitted_at`);
 
 --
 -- Indexes for table `notifications`
@@ -847,13 +948,6 @@ ALTER TABLE `verification_center`
   ADD KEY `idx_center_location` (`latitude`,`longitude`);
 
 --
--- Indexes for table `visa_checklist_items`
---
-ALTER TABLE `visa_checklist_items`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `visa_type_id` (`visa_type_id`);
-
---
 -- Indexes for table `visa_countries`
 --
 ALTER TABLE `visa_countries`
@@ -882,13 +976,19 @@ ALTER TABLE `visa_types`
 -- AUTO_INCREMENT for table `admin_logs`
 --
 ALTER TABLE `admin_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=114;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=152;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
 --
 ALTER TABLE `admin_users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `application_files`
+--
+ALTER TABLE `application_files`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `appointment`
@@ -906,7 +1006,13 @@ ALTER TABLE `booking`
 -- AUTO_INCREMENT for table `counter`
 --
 ALTER TABLE `counter`
-  MODIFY `counter_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `counter_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `miscellaneous_applications`
+--
+ALTER TABLE `miscellaneous_applications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `notifications`
@@ -924,7 +1030,7 @@ ALTER TABLE `notification_templates`
 -- AUTO_INCREMENT for table `service`
 --
 ALTER TABLE `service`
-  MODIFY `service_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `service_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `system_config`
@@ -948,19 +1054,13 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `user_logs`
 --
 ALTER TABLE `user_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 
 --
 -- AUTO_INCREMENT for table `verification_center`
 --
 ALTER TABLE `verification_center`
   MODIFY `center_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `visa_checklist_items`
---
-ALTER TABLE `visa_checklist_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `visa_countries`
@@ -985,6 +1085,13 @@ ALTER TABLE `visa_types`
 --
 
 --
+-- Constraints for table `application_files`
+--
+ALTER TABLE `application_files`
+  ADD CONSTRAINT `fk_app_file_application` FOREIGN KEY (`application_id`) REFERENCES `miscellaneous_applications` (`application_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_app_file_user` FOREIGN KEY (`uploaded_by`) REFERENCES `user` (`user_id`) ON DELETE SET NULL;
+
+--
 -- Constraints for table `appointment`
 --
 ALTER TABLE `appointment`
@@ -1007,16 +1114,17 @@ ALTER TABLE `counter`
   ADD CONSTRAINT `counter_ibfk_1` FOREIGN KEY (`center_id`) REFERENCES `verification_center` (`center_id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `miscellaneous_applications`
+--
+ALTER TABLE `miscellaneous_applications`
+  ADD CONSTRAINT `miscellaneous_applications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `miscellaneous_applications_ibfk_2` FOREIGN KEY (`service_id`) REFERENCES `service` (`service_id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `service_details`
 --
 ALTER TABLE `service_details`
   ADD CONSTRAINT `fk_service_details_service` FOREIGN KEY (`service_id`) REFERENCES `service` (`service_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `visa_checklist_items`
---
-ALTER TABLE `visa_checklist_items`
-  ADD CONSTRAINT `visa_checklist_items_ibfk_1` FOREIGN KEY (`visa_type_id`) REFERENCES `visa_types` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `visa_downloads`
