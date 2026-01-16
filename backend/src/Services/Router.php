@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndianConsular\Services;
 
 use IndianConsular\Controllers\AuthController;
+use IndianConsular\Controllers\ApplicationController;
 use IndianConsular\Controllers\BookingController;
 use IndianConsular\Controllers\AppointmentController;
 use IndianConsular\Controllers\ServiceController;
@@ -189,6 +190,21 @@ class Router
             // =============================================
             'POST /ocr/extract' => [OcrController::class, 'extractFromDocument'],
             'GET /ocr/health' => [OcrController::class, 'health'],
+
+            // =============================================
+            // MISCELLANEOUS APPLICATIONS ROUTES (User)
+            // =============================================
+            'POST /applications/miscellaneous/submit' => [ApplicationController::class, 'submitMiscellaneous'],
+
+            // =============================================
+            // ADMIN MISCELLANEOUS APPLICATIONS ROUTES
+            // =============================================
+            'GET /admin/applications/miscellaneous' => [ApplicationController::class, 'adminListMiscellaneous'],
+            'GET /admin/applications/miscellaneous/stats' => [ApplicationController::class, 'adminGetStats'],
+            'GET /admin/applications/miscellaneous/{id}' => [ApplicationController::class, 'adminGetMiscellaneous'],
+            'PUT /admin/applications/miscellaneous/{id}' => [ApplicationController::class, 'adminUpdateMiscellaneous'],
+            'GET /admin/applications/miscellaneous/{id}/files/{fileId}' => [ApplicationController::class, 'adminGetFile'],
+            'GET /admin/applications/miscellaneous/{id}/files/{fileId}/download' => [ApplicationController::class, 'adminDownloadFile'],
         ];
     }
 
