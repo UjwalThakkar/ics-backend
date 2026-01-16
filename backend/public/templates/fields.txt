@@ -1,0 +1,90 @@
+---
+FieldType: Text
+FieldName: FullName
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: NationalityOfApplicant
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: FullNameOfFatherAndNationality
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: FullNameOfMotherAndNationality
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: DateOfBirth
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: PlaceAndCountryOfBirthOfApplicant
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: NameOfSpouseAndNationality
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: PresentAddressInSouthAfrica
+FieldFlags: 4198400
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: PhoneNo
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: EmailAddress
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: Profession/EmployersDetails
+FieldFlags: 4198400
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: Visa/ImmigrationStatus
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: PermanentAddressInIndia
+FieldFlags: 4198400
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: Textbox14
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: Textbox15
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: Textbox16
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: Textbox17
+FieldFlags: 4194304
+FieldJustification: Left
+---
+FieldType: Text
+FieldName: Textbox18
+FieldFlags: 4198400
+FieldJustification: Left
