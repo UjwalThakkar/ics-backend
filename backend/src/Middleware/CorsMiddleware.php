@@ -15,10 +15,29 @@ class CorsMiddleware
             'https://localhost:3000',
         ];
 
+        // Add VPS IP if provided in env
+        if (!empty($_ENV['VPS_IP'])) {
+            $vpsIp = $_ENV['VPS_IP'];
+            $allowedOrigins[] = "http://{$vpsIp}";
+            $allowedOrigins[] = "http://{$vpsIp}:3000";
+            $allowedOrigins[] = "http://{$vpsIp}:80";
+        }
+
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
+        // If origin matches allowed list, set it
         if (in_array($origin, $allowedOrigins)) {
             header("Access-Control-Allow-Origin: {$origin}");
+        } elseif (!empty($origin) && (strpos($origin, 'http://') === 0 || strpos($origin, 'https://') === 0)) {
+            // For development: allow any origin that looks valid (IP addresses, localhost, etc.)
+            // In production, you should restrict this
+            $isDevelopment = ($_ENV['APP_ENV'] ?? 'development') !== 'production';
+            if ($isDevelopment) {
+                header("Access-Control-Allow-Origin: {$origin}");
+            }
+        } else {
+            // Fallback: if no origin header, allow requests (for same-origin or server-to-server)
+            // But still set credentials header
         }
 
         header('Access-Control-Allow-Credentials: true');

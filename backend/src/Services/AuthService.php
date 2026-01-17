@@ -89,15 +89,20 @@ class AuthService
      */
     public function setAuthCookie(string $token): void
     {
-        $isSecure = ($_ENV['APP_ENV'] ?? 'development') === 'production';
+        $isProduction = ($_ENV['APP_ENV'] ?? 'development') === 'production';
+        $isSecure = $isProduction; // Only require HTTPS in production
+        
+        // For cross-origin requests (different ports/IPs), SameSite needs to be None
+        // But None requires Secure=true (HTTPS). For HTTP, use Lax.
+        $sameSite = $isSecure ? 'None' : 'Lax';
         
         setcookie($this->cookieName, $token, [
             'expires' => time() + $this->expiration,
             'path' => '/',
-            'domain' => '',
+            'domain' => '', // Empty domain allows any domain/IP
             'secure' => $isSecure,
             'httponly' => true,
-            'samesite' => 'Lax'
+            'samesite' => $sameSite
         ]);
     }
 
@@ -106,13 +111,17 @@ class AuthService
      */
     public function clearAuthCookie(): void
     {
+        $isProduction = ($_ENV['APP_ENV'] ?? 'development') === 'production';
+        $isSecure = $isProduction;
+        $sameSite = $isSecure ? 'None' : 'Lax';
+        
         setcookie($this->cookieName, '', [
             'expires' => time() - 3600,
             'path' => '/',
             'domain' => '',
-            'secure' => ($_ENV['APP_ENV'] ?? 'development') === 'production',
+            'secure' => $isSecure,
             'httponly' => true,
-            'samesite' => 'Lax'
+            'samesite' => $sameSite
         ]);
         
         // Also clear CSRF cookie
@@ -120,9 +129,9 @@ class AuthService
             'expires' => time() - 3600,
             'path' => '/',
             'domain' => '',
-            'secure' => ($_ENV['APP_ENV'] ?? 'development') === 'production',
+            'secure' => $isSecure,
             'httponly' => false,
-            'samesite' => 'Lax'
+            'samesite' => $sameSite
         ]);
     }
 
@@ -143,13 +152,14 @@ class AuthService
         $isSecure = ($_ENV['APP_ENV'] ?? 'development') === 'production';
         
         // Set CSRF token in a readable cookie (not httponly)
+        $sameSite = $isSecure ? 'None' : 'Lax';
         setcookie($this->csrfCookieName, $csrfToken, [
             'expires' => time() + $this->expiration,
             'path' => '/',
             'domain' => '',
             'secure' => $isSecure,
             'httponly' => false,  // JS needs to read this
-            'samesite' => 'Lax'
+            'samesite' => $sameSite
         ]);
         
         return $csrfToken;
