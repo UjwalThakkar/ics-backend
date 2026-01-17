@@ -13,11 +13,13 @@ class CorsMiddleware
             $frontendUrl,
             'http://localhost:3000',
             'https://localhost:3000',
+            'http://145.223.18.182:3000',
+            'https://145.223.18.182:3000',
         ];
 
         // Add VPS IP if provided in env
         if (!empty($_ENV['VPS_IP'])) {
-            $vpsIp = $_ENV['VPS_IP'];
+            $vpsIp = $_ENV['VPS_IP'] ?? 'http://145.223.18.182:3000';
             $allowedOrigins[] = "http://{$vpsIp}";
             $allowedOrigins[] = "http://{$vpsIp}:3000";
             $allowedOrigins[] = "http://{$vpsIp}:80";
