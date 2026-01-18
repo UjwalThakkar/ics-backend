@@ -6,29 +6,32 @@ namespace IndianConsular\Controllers;
 
 use IndianConsular\Models\User;
 use IndianConsular\Models\AdminUser;
+use IndianConsular\Services\OtpService;
 
 class AuthController extends BaseController
 {
     private User $userModel;
     private AdminUser $adminUserModel;
+    private OtpService $otpService;
 
     public function __construct()
     {
         parent::__construct();
         $this->userModel = new User();
         $this->adminUserModel = new AdminUser();
+        $this->otpService = new OtpService();
     }
 
     /**
-     * Register a new user
-     * POST /auth/register
+     * Send registration OTP
+     * POST /auth/send-registration-otp
      */
-    public function register(array $data, array $params): array
+    public function sendRegistrationOtp(array $data, array $params): array
     {
         $data = $this->sanitize($data);
 
         // Validate required fields
-        $requiredFields = ['email', 'password', 'firstName', 'lastName'];
+        $requiredFields = ['email', 'firstName', 'lastName'];
         $missing = $this->validateRequired($data, $requiredFields);
         if (!empty($missing)) {
             return $this->error('Missing required fields: ' . implode(', ', $missing), 400);
@@ -39,6 +42,64 @@ class AuthController extends BaseController
             if ($this->userModel->emailExists($data['email'])) {
                 return $this->error('Email already registered', 409);
             }
+
+            // Normalize email
+            $email = trim(strtolower($data['email']));
+            
+            // Send OTP
+            $result = $this->otpService->sendRegistrationOtp(
+                $email,
+                $data['firstName'],
+                $data['lastName']
+            );
+
+            if (!$result['success']) {
+                return $this->error($result['error'] ?? 'Failed to send OTP', 500);
+            }
+
+            return $this->success([
+                'message' => 'OTP sent successfully to your email',
+                'expiresAt' => $result['expiresAt']
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Send registration OTP error: " . $e->getMessage());
+            return $this->error('Failed to send OTP', 500);
+        }
+    }
+
+    /**
+     * Register a new user (with OTP verification)
+     * POST /auth/register
+     */
+    public function register(array $data, array $params): array
+    {
+        $data = $this->sanitize($data);
+
+        // Validate required fields
+        $requiredFields = ['email', 'password', 'firstName', 'lastName', 'otp'];
+        $missing = $this->validateRequired($data, $requiredFields);
+        if (!empty($missing)) {
+            return $this->error('Missing required fields: ' . implode(', ', $missing), 400);
+        }
+
+        try {
+            // Check if email already exists
+            if ($this->userModel->emailExists($data['email'])) {
+                return $this->error('Email already registered', 409);
+            }
+
+            // Normalize email for OTP verification
+            $email = trim(strtolower($data['email']));
+            
+            // Verify OTP first
+            error_log("Registration: Verifying OTP for email: {$email}");
+            $otpVerification = $this->otpService->verifyRegistrationOtp($email, $data['otp']);
+            if (!$otpVerification['success']) {
+                error_log("Registration: OTP verification failed - " . ($otpVerification['error'] ?? 'Unknown error'));
+                return $this->error($otpVerification['error'] ?? 'Invalid OTP', 400);
+            }
+            error_log("Registration: OTP verified successfully");
 
             // Check if passport number already exists (if provided)
             if (!empty($data['passportNo']) && $this->userModel->passportNumberExists($data['passportNo'])) {
@@ -57,8 +118,8 @@ class AuthController extends BaseController
                 'nationality' => $data['nationality'] ?? null,
                 'passport_no' => $data['passportNo'] ?? null,
                 'passport_expiry' => $data['passportExpiry'] ?? null,
-                'account_status' => 'active',
-                'email_validated' => 0
+                'account_status' => 'active',  // Set to active as per requirement
+                'email_validated' => 1  // Set to 1 as OTP is verified
             ];
 
             // Create the user
@@ -84,7 +145,7 @@ class AuthController extends BaseController
                 'phoneNo' => $user['phone_no'],
                 'accountStatus' => $user['account_status'],
                 'emailValidated' => (bool)$user['email_validated'],
-                'message' => 'User registered successfully. Please verify your email to complete registration.'
+                'message' => 'User registered successfully. Email verified.'
             ], 201);
         } catch (\Exception $e) {
             // Log failed registration attempt
@@ -98,6 +159,52 @@ class AuthController extends BaseController
 
             error_log("Registration error: " . $e->getMessage());
             return $this->error('Registration failed', 500);
+        }
+    }
+
+    /**
+     * Regenerate registration OTP
+     * POST /auth/regenerate-registration-otp
+     */
+    public function regenerateRegistrationOtp(array $data, array $params): array
+    {
+        $data = $this->sanitize($data);
+
+        // Validate required fields
+        $requiredFields = ['email', 'firstName', 'lastName'];
+        $missing = $this->validateRequired($data, $requiredFields);
+        if (!empty($missing)) {
+            return $this->error('Missing required fields: ' . implode(', ', $missing), 400);
+        }
+
+        try {
+            // Check if email already exists
+            if ($this->userModel->emailExists($data['email'])) {
+                return $this->error('Email already registered', 409);
+            }
+
+            // Normalize email
+            $email = trim(strtolower($data['email']));
+            
+            // Regenerate and send OTP
+            $result = $this->otpService->regenerateOtp(
+                $email,
+                $data['firstName'],
+                $data['lastName']
+            );
+
+            if (!$result['success']) {
+                return $this->error($result['error'] ?? 'Failed to regenerate OTP', 500);
+            }
+
+            return $this->success([
+                'message' => 'New OTP sent successfully to your email',
+                'expiresAt' => $result['expiresAt']
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Regenerate registration OTP error: " . $e->getMessage());
+            return $this->error('Failed to regenerate OTP', 500);
         }
     }
 

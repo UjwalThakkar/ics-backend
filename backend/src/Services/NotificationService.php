@@ -194,9 +194,9 @@ class NotificationService
     }
 
     /**
-     * Send email notification
+     * Send email notification (public method for general use)
      */
-    private function sendEmail(
+    public function sendEmail(
         string $email,
         string $subject,
         string $content,

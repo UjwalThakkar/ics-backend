@@ -30,6 +30,8 @@ class Router
             // AUTHENTICATION ROUTES
             // =============================================
             'POST /auth/login' => [AuthController::class, 'login'],
+            'POST /auth/send-registration-otp' => [AuthController::class, 'sendRegistrationOtp'],
+            'POST /auth/regenerate-registration-otp' => [AuthController::class, 'regenerateRegistrationOtp'],
             'POST /auth/register' => [AuthController::class, 'register'],
             'POST /auth/logout' => [AuthController::class, 'logout'],
             'GET /auth/me' => [AuthController::class, 'me'],
