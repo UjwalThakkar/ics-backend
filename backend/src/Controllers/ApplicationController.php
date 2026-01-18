@@ -1140,6 +1140,15 @@ class ApplicationController extends BaseController
             // Get service details for processing time
             $service = $this->serviceModel->findByServiceId($application['service_id']);
             
+            // Check if service exists (might have been deleted)
+            if (!$service) {
+                error_log("trackMiscellaneous: Service not found for service_id: " . $application['service_id']);
+                // Still return application data, but with a generic service name
+                $serviceTitle = 'Service Information Unavailable';
+            } else {
+                $serviceTitle = $service['title'] ?? 'Miscellaneous Service';
+            }
+            
             // Get the current status from database (ensure we have the latest)
             // Handle NULL status (database enum allows NULL, default to 'submitted')
             $currentStatus = $application['status'] ?? 'submitted';
@@ -1152,7 +1161,8 @@ class ApplicationController extends BaseController
             
             // Calculate expected completion date
             $submittedDate = new \DateTime($application['submitted_at']);
-            $expectedCompletion = $this->calculateExpectedCompletion($submittedDate, $service['processing_time'] ?? null);
+            $processingTime = $service['processing_time'] ?? null;
+            $expectedCompletion = $this->calculateExpectedCompletion($submittedDate, $processingTime);
             
             // Generate processing timeline based on status
             $timeline = $this->generateProcessingTimeline($currentStatus, $application['submitted_at'], $application['updated_at']);
@@ -1160,7 +1170,7 @@ class ApplicationController extends BaseController
             return $this->success([
                 'application_id' => $application['application_id'],
                 'status' => $currentStatus, // Use the explicitly retrieved status
-                'service_type' => $service['title'] ?? 'Miscellaneous Service',
+                'service_type' => $serviceTitle,
                 'submitted_at' => $application['submitted_at'],
                 'expected_completion' => $expectedCompletion,
                 'timeline' => $timeline,
@@ -1169,7 +1179,8 @@ class ApplicationController extends BaseController
 
         } catch (\Exception $e) {
             error_log("Track miscellaneous application error: " . $e->getMessage());
-            return $this->error('Failed to track application', 500);
+            error_log("Stack trace: " . $e->getTraceAsString());
+            return $this->error('Service temporarily unavailable. Please try again later or contact support.', 500);
         }
     }
 
