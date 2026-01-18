@@ -57,8 +57,15 @@ abstract class BaseController
         $missing = [];
 
         foreach ($required as $field) {
-            if (!isset($data[$field]) || empty($data[$field])) {
-                $missing[] = $field;
+            // For array fields, allow empty arrays (they're valid)
+            if (in_array($field, ['fees', 'required_documents', 'eligibility_requirements'])) {
+                if (!isset($data[$field])) {
+                    $missing[] = $field;
+                }
+            } else {
+                if (!isset($data[$field]) || empty($data[$field])) {
+                    $missing[] = $field;
+                }
             }
         }
 

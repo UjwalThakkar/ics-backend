@@ -275,13 +275,22 @@ class ServiceController extends BaseController
         }
 
         try {
+            // Normalize required_documents - ensure it's an array
+            $requiredDocs = $data['required_documents'] ?? [];
+            if (!is_array($requiredDocs)) {
+                $requiredDocs = [];
+            }
+            
+            // Log for debugging
+            error_log("Create service - required_documents: " . json_encode($requiredDocs));
+            
             $serviceData = [
                 'category' => $data['category'],
                 'title' => $data['title'],
                 'description' => $data['description'] ?? '',
                 'processing_time' => $data['processing_time'] ?? '',
                 'fees' => json_encode($data['fees'] ?? []),
-                'required_documents' => json_encode($data['required_documents'] ?? []),
+                'required_documents' => json_encode($requiredDocs),
                 'eligibility_requirements' => json_encode($data['eligibility_requirements'] ?? []),
                 'is_active' => isset($data['is_active']) ? (int)(bool)$data['is_active'] : 1,
                 'display_order' => $data['display_order'] ?? 99,
@@ -364,11 +373,27 @@ class ServiceController extends BaseController
 
             foreach ($allowedFields as $field) {
                 $camelKey = lcfirst(str_replace('_', '', ucwords($field, '_')));
+                // Check both camelCase and snake_case for compatibility
+                $value = null;
                 if (isset($data[$camelKey])) {
+                    $value = $data[$camelKey];
+                } elseif (isset($data[$field])) {
+                    $value = $data[$field];
+                }
+                
+                if ($value !== null) {
                     if (in_array($field, ['fees', 'required_documents', 'eligibility_requirements'])) {
-                        $updateData[$field] = json_encode($data[$camelKey]);
+                        // Ensure it's an array before encoding
+                        if (!is_array($value)) {
+                            $value = [];
+                        }
+                        // Log for debugging
+                        if ($field === 'required_documents') {
+                            error_log("Update service - required_documents: " . json_encode($value));
+                        }
+                        $updateData[$field] = json_encode($value);
                     } else {
-                        $updateData[$field] = $data[$camelKey];
+                        $updateData[$field] = $value;
                     }
                 }
             }

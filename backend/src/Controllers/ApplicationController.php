@@ -608,8 +608,10 @@ class ApplicationController extends BaseController
             }
 
             // Debug logging for status updates and validation
+            $oldStatus = $application['status'] ?? null;
+            $newStatus = null;
+            
             if (isset($data['status'])) {
-                $oldStatus = $application['status'] ?? 'NULL';
                 $newStatus = $data['status'];
                 error_log("Admin updating application {$applicationId} status from '{$oldStatus}' to '{$newStatus}'");
                 
@@ -618,6 +620,14 @@ class ApplicationController extends BaseController
                 if (!in_array($newStatus, $validStatuses)) {
                     error_log("WARNING: Invalid status '{$newStatus}' for application {$applicationId}. Valid statuses: " . implode(', ', $validStatuses));
                     // Don't reject, but log the warning - the database enum will enforce it anyway
+                }
+                
+                // If status is being changed to 'rejected', admin_notes is mandatory
+                if ($newStatus === 'rejected') {
+                    $adminNotes = $data['admin_notes'] ?? $updateData['admin_notes'] ?? '';
+                    if (empty(trim($adminNotes))) {
+                        return $this->error('Admin notes are required when rejecting an application', 400);
+                    }
                 }
             }
 
@@ -641,6 +651,61 @@ class ApplicationController extends BaseController
                 error_log("Application {$applicationId} status after update: '{$updatedApplication['status']}'");
             } else {
                 error_log("WARNING: Could not verify update for application {$applicationId}");
+            }
+
+            // Send email notification if status changed to approved or rejected
+            if ($newStatus && $newStatus !== $oldStatus && in_array($newStatus, ['approved', 'rejected'])) {
+                try {
+                    // Get user email from form_data or user table
+                    $userEmail = null;
+                    $applicantName = null;
+                    
+                    // Try to get email from form_data
+                    if (!empty($currentFormData['email_address'])) {
+                        $userEmail = $currentFormData['email_address'];
+                    }
+                    
+                    // Try to get name from form_data
+                    if (!empty($currentFormData['full_name'])) {
+                        $applicantName = $currentFormData['full_name'];
+                    }
+                    
+                    // If no email in form_data, try to get from user table
+                    if (empty($userEmail) && !empty($application['user_id'])) {
+                        $user = $this->userModel->find((int)$application['user_id']);
+                        if ($user && !empty($user['email'])) {
+                            $userEmail = $user['email'];
+                        }
+                        if (empty($applicantName) && $user) {
+                            $applicantName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+                        }
+                    }
+                    
+                    // Send email if we have an email address
+                    if (!empty($userEmail)) {
+                        if ($newStatus === 'approved') {
+                            $this->notificationService->sendApplicationApproved(
+                                $applicationId,
+                                $userEmail,
+                                $applicantName ?: 'Applicant'
+                            );
+                        } elseif ($newStatus === 'rejected') {
+                            // Get admin notes from updated application (after the update)
+                            $adminNotes = $updatedApplication['admin_notes'] ?? $updateData['admin_notes'] ?? $application['admin_notes'] ?? '';
+                            $this->notificationService->sendApplicationRejected(
+                                $applicationId,
+                                $userEmail,
+                                $applicantName ?: 'Applicant',
+                                $adminNotes
+                            );
+                        }
+                    } else {
+                        error_log("Cannot send status email for application {$applicationId}: No email address found");
+                    }
+                } catch (\Exception $e) {
+                    // Log error but don't fail the update
+                    error_log("Failed to send status email for application {$applicationId}: " . $e->getMessage());
+                }
             }
 
             // Log admin activity
@@ -908,6 +973,118 @@ class ApplicationController extends BaseController
         } catch (\Exception $e) {
             error_log("Admin download file error: " . $e->getMessage());
             return $this->error('Failed to download file', 500);
+        }
+    }
+
+    /**
+     * Upload file for application (Admin)
+     * POST /admin/applications/miscellaneous/{id}/files
+     */
+    public function adminUploadFile(array $data, array $params): array
+    {
+        $admin = $this->requireAdminAuth($data);
+        if (!$admin) {
+            return $this->error('Unauthorized', 401);
+        }
+
+        $applicationId = $params['id'] ?? '';
+        if (empty($applicationId)) {
+            return $this->error('Application ID is required', 400);
+        }
+
+        // Verify application exists
+        $application = $this->miscApplicationModel->findByApplicationId($applicationId);
+        if (!$application) {
+            return $this->error('Application not found', 404);
+        }
+
+        try {
+            // Check if file was uploaded
+            if (empty($_FILES) || !isset($_FILES['file'])) {
+                return $this->error('No file uploaded', 400);
+            }
+
+            $file = $_FILES['file'];
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                return $this->error('File upload error', 400);
+            }
+
+            // Validate file
+            $maxSize = 10 * 1024 * 1024; // 10MB
+            if ($file['size'] > $maxSize) {
+                return $this->error('File size exceeds 10MB limit', 400);
+            }
+
+            $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+            if (!in_array($file['type'], $allowedTypes)) {
+                return $this->error('Invalid file type. Only PDF, JPG, and PNG are allowed', 400);
+            }
+
+            // Get document type from request (optional, defaults to 'admin_upload')
+            $documentType = $data['document_type'] ?? 'admin_upload';
+            $description = $data['description'] ?? null;
+
+            // Setup upload directory
+            $uploadDir = $_ENV['UPLOAD_DIR'] ?? __DIR__ . '/../../public/uploads/applications/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Generate unique filename
+            $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $fileName = uniqid('admin_', true) . '.' . $fileExtension;
+            $filePath = $uploadDir . $fileName;
+
+            // Move uploaded file
+            if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+                return $this->error('Failed to save file', 500);
+            }
+
+            // Generate file ID
+            $fileId = 'FILE' . strtoupper(bin2hex(random_bytes(6)));
+
+            // Save file metadata
+            $fileData = [
+                'file_id' => $fileId,
+                'application_id' => $applicationId,
+                'file_name' => $fileName,
+                'original_name' => $file['name'],
+                'file_path' => '/uploads/applications/' . $fileName,
+                'file_type' => $fileExtension,
+                'file_size' => $file['size'],
+                'mime_type' => $file['type'],
+                'document_type' => $documentType,
+                'uploaded_by' => null, // Admin uploads don't have a user_id
+                'uploaded_at' => date('Y-m-d H:i:s')
+            ];
+
+            $this->fileModel->insert($fileData);
+
+            // Log admin activity
+            $this->logService->logAdminActivity(
+                (string)$admin['id'],
+                'ADMIN_UPLOADED_FILE',
+                [
+                    'application_id' => $applicationId,
+                    'file_id' => $fileId,
+                    'file_name' => $file['name'],
+                    'document_type' => $documentType
+                ],
+                $this->getClientIp(),
+                $this->getUserAgent(),
+                'application_file',
+                $fileId
+            );
+
+            return $this->success([
+                'file_id' => $fileId,
+                'file_name' => $file['name'],
+                'message' => 'File uploaded successfully'
+            ], 201);
+
+        } catch (\Exception $e) {
+            error_log("Admin upload file error: " . $e->getMessage());
+            return $this->error('Failed to upload file: ' . $e->getMessage(), 500);
         }
     }
 

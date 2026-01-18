@@ -42,7 +42,73 @@ class NotificationService
     }
 
     /**
-     * Send appointment confirmation
+     * Send application approved notification using template
+     */
+    public function sendApplicationApproved(string $applicationId, string $email, string $name): bool
+    {
+        // Load template from database
+        $template = $this->getTemplate('app_approved');
+        
+        if ($template) {
+            // Use template with variable replacement
+            $subject = $this->renderTemplate($template['subject'], [
+                'applicant_name' => $name,
+                'application_id' => $applicationId
+            ]);
+            
+            $content = $this->renderTemplate($template['content'], [
+                'applicant_name' => $name,
+                'application_id' => $applicationId
+            ]);
+        } else {
+            // Fallback to hardcoded content if template not found
+            $subject = 'Application Approved';
+            $content = "Dear {$name},\n\n";
+            $content .= "Your application {$applicationId} has been approved.\n\n";
+            $content .= "Best regards,\nIndian Consular Services";
+        }
+
+        return $this->sendEmail($email, $subject, $content, 'app_approved', $applicationId);
+    }
+
+    /**
+     * Send application rejected notification using template
+     */
+    public function sendApplicationRejected(string $applicationId, string $email, string $name, string $adminNote): bool
+    {
+        // Load template from database
+        $template = $this->getTemplate('app_rejected');
+        
+        if ($template) {
+            // Use template with variable replacement
+            // Note: Template uses {{admin_note}} (singular) as per database
+            $subject = $this->renderTemplate($template['subject'], [
+                'applicant_name' => $name,
+                'application_id' => $applicationId,
+                'admin_note' => $adminNote
+            ]);
+            
+            $content = $this->renderTemplate($template['content'], [
+                'applicant_name' => $name,
+                'application_id' => $applicationId,
+                'admin_note' => $adminNote
+            ]);
+        } else {
+            // Fallback to hardcoded content if template not found
+            $subject = 'Application Rejected !';
+            $content = "Dear {$name},\n\n";
+            $content .= "Your application {$applicationId} has been Rejected.\n\n";
+            if (!empty($adminNote)) {
+                $content .= "Reason: {$adminNote}\n\n";
+            }
+            $content .= "Best regards,\nIndian Consular Services";
+        }
+
+        return $this->sendEmail($email, $subject, $content, 'app_rejected', $applicationId);
+    }
+
+    /**
+     * Send appointment confirmation using template from database
      */
     public function sendAppointmentConfirmation(
         string $appointmentId,
@@ -54,28 +120,94 @@ class NotificationService
         string $time,
         string $serviceType
     ): bool {
-        $subject = 'Appointment Confirmation';
+        // Load template from database
+        $template = $this->getTemplate('appointment_confirmed');
         
-        $content = "Dear {$name},\n\n";
-        $content .= "Your appointment has been confirmed!\n\n";
-        $content .= "Appointment Details:\n";
-        $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $content .= "Appointment ID: {$appointmentId}\n";
-        $content .= "Service: {$serviceType}\n";
-        $content .= "Date: {$date}\n";
-        $content .= "Time: {$time}\n";
-        $content .= "Location: {$centerName}\n";
-        $content .= "Counter: {$counterNumber}\n";
-        $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
-        $content .= "Important Instructions:\n";
-        $content .= "• Please arrive 15 minutes before your appointment time\n";
-        $content .= "• Bring all required documents\n";
-        $content .= "• Bring a printed copy of this confirmation or your appointment ID\n";
-        $content .= "• Wear appropriate attire for photo/biometric services\n\n";
-        $content .= "To cancel or reschedule, please login to your account.\n\n";
-        $content .= "Best regards,\nIndian Consular Services";
+        if ($template) {
+            // Use template with variable replacement
+            $subject = $this->renderTemplate($template['subject'], [
+                'client_name' => $name,
+                'appointment_date' => $date,
+                'appointment_time' => $time,
+                'center_name' => $centerName,
+                'counter_number' => $counterNumber,
+                'appointment_id' => $appointmentId,
+                'service_type' => $serviceType
+            ]);
+            
+            $content = $this->renderTemplate($template['content'], [
+                'client_name' => $name,
+                'appointment_date' => $date,
+                'appointment_time' => $time,
+                'center_name' => $centerName,
+                'counter_number' => $counterNumber,
+                'appointment_id' => $appointmentId,
+                'service_type' => $serviceType
+            ]);
+        } else {
+            // Fallback to hardcoded content if template not found
+            $subject = 'Appointment Confirmation';
+            $content = "Dear {$name},\n\n";
+            $content .= "Your appointment has been confirmed!\n\n";
+            $content .= "Appointment Details:\n";
+            $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+            $content .= "Appointment ID: {$appointmentId}\n";
+            $content .= "Service: {$serviceType}\n";
+            $content .= "Date: {$date}\n";
+            $content .= "Time: {$time}\n";
+            $content .= "Location: {$centerName}\n";
+            $content .= "Counter: {$counterNumber}\n";
+            $content .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            $content .= "Important Instructions:\n";
+            $content .= "• Please arrive 15 minutes before your appointment time\n";
+            $content .= "• Bring all required documents\n";
+            $content .= "• Bring a printed copy of this confirmation or your appointment ID\n";
+            $content .= "• Wear appropriate attire for photo/biometric services\n\n";
+            $content .= "To cancel or reschedule, please login to your account.\n\n";
+            $content .= "Best regards,\nIndian Consular Services";
+        }
 
         return $this->sendEmail($email, $subject, $content, 'appointment_confirmed', null, $appointmentId);
+    }
+    
+    /**
+     * Get template from database by template_id
+     */
+    private function getTemplate(string $templateId): ?array
+    {
+        try {
+            $sql = "SELECT template_id, name, subject, content, variables, is_active 
+                    FROM notification_templates 
+                    WHERE template_id = ? AND is_active = 1 
+                    LIMIT 1";
+            
+            $stmt = $this->notificationModel->query($sql, [$templateId]);
+            $template = $stmt->fetch();
+            
+            return $template ?: null;
+        } catch (\Exception $e) {
+            error_log("Error loading template {$templateId}: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Render template content by replacing variables
+     */
+    private function renderTemplate(string $template, array $variables): string
+    {
+        $rendered = $template;
+        
+        foreach ($variables as $key => $value) {
+            $placeholder = '{{' . $key . '}}';
+            $rendered = str_replace($placeholder, $value, $rendered);
+        }
+        
+        // Convert \r\n to actual newlines for proper email formatting
+        $rendered = str_replace('\r\n', "\n", $rendered);
+        $rendered = str_replace('\n', "\n", $rendered);
+        
+        return $rendered;
     }
 
     /**

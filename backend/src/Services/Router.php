@@ -16,6 +16,7 @@ use IndianConsular\Controllers\ServiceDetailsController;
 use IndianConsular\Controllers\TimeSlotController;
 use IndianConsular\Controllers\VisaController;
 use IndianConsular\Controllers\OcrController;
+use IndianConsular\Controllers\NotificationTemplateController;
 
 class Router
 {
@@ -207,9 +208,18 @@ class Router
             'GET /admin/applications/miscellaneous/stats' => [ApplicationController::class, 'adminGetStats'],
             'GET /admin/applications/miscellaneous/{id}' => [ApplicationController::class, 'adminGetMiscellaneous'],
             'PUT /admin/applications/miscellaneous/{id}' => [ApplicationController::class, 'adminUpdateMiscellaneous'],
+            'POST /admin/applications/miscellaneous/{id}/files' => [ApplicationController::class, 'adminUploadFile'],
             'GET /admin/applications/miscellaneous/{id}/files/{fileId}' => [ApplicationController::class, 'adminGetFile'],
             'GET /admin/applications/miscellaneous/{id}/files/{fileId}/download' => [ApplicationController::class, 'adminDownloadFile'],
             'GET /admin/applications/miscellaneous/{id}/filled-pdf' => [ApplicationController::class, 'adminDownloadFilledPdf'],
+
+            // =============================================
+            // ADMIN NOTIFICATION TEMPLATE ROUTES
+            // =============================================
+            'GET /admin/notification-templates' => [NotificationTemplateController::class, 'adminList'],
+            'GET /admin/notification-templates/{id}' => [NotificationTemplateController::class, 'adminGet'],
+            'PUT /admin/notification-templates/{id}' => [NotificationTemplateController::class, 'adminUpdate'],
+            'POST /admin/notification-templates' => [NotificationTemplateController::class, 'adminCreate'],
         ];
     }
 

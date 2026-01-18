@@ -9,6 +9,7 @@ use IndianConsular\Models\Service;
 use IndianConsular\Models\VerificationCenter;
 use IndianConsular\Models\User;
 use IndianConsular\Models\TimeSlot;
+use IndianConsular\Services\NotificationService;
 
 class BookingController extends BaseController
 {
@@ -17,6 +18,7 @@ class BookingController extends BaseController
     private VerificationCenter $centerModel;
     private User $userModel;
     private TimeSlot $timeSlotModel;
+    private NotificationService $notificationService;
 
     public function __construct()
     {
@@ -26,6 +28,7 @@ class BookingController extends BaseController
         $this->centerModel = new VerificationCenter();
         $this->userModel = new User();
         $this->timeSlotModel = new TimeSlot();
+        $this->notificationService = new NotificationService();
     }
 
     /**
@@ -228,6 +231,30 @@ class BookingController extends BaseController
 
             if (!$result['success']) {
                 return $this->error($result['error'] ?? 'Failed to create booking', 400);
+            }
+
+            // Send confirmation email using template
+            $confirmation = $result['confirmation'];
+            if ($confirmation && !empty($confirmation['user_email'])) {
+                try {
+                    // Format date and time for email
+                    $appointmentDate = date('F j, Y', strtotime($confirmation['booked_date']));
+                    $appointmentTime = date('g:i A', strtotime($confirmation['start_time']));
+                    
+                    $this->notificationService->sendAppointmentConfirmation(
+                        (string)$result['appointment_id'],
+                        $confirmation['user_email'],
+                        $confirmation['client_name'] ?? ($confirmation['first_name'] . ' ' . $confirmation['last_name']),
+                        $confirmation['center_name'] ?? 'Consular Center',
+                        (string)($confirmation['counter_number'] ?? $confirmation['counter_id'] ?? 'N/A'),
+                        $appointmentDate,
+                        $appointmentTime,
+                        $confirmation['service_title'] ?? 'Service'
+                    );
+                } catch (\Exception $e) {
+                    // Log error but don't fail the booking
+                    error_log("Failed to send appointment confirmation email: " . $e->getMessage());
+                }
             }
 
             // Log user activity

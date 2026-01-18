@@ -379,6 +379,7 @@ class Booking extends BaseModel
                     s.fees,
                     s.required_documents,
                     c.counter_id,
+                    c.counter_id as counter_number,
                     c.counter_name,
                     vc.center_id,
                     vc.name as center_name,
@@ -391,8 +392,10 @@ class Booking extends BaseModel
                     u.user_id,
                     u.first_name,
                     u.last_name,
+                    CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as client_name,
                     u.email as user_email,
                     u.phone_no,
+                    COALESCE(u.phone_no, '') as client_phone,
                     u.passport_no
                 FROM booking b
                 INNER JOIN appointment a ON b.appointment = a.appointment_id
@@ -413,6 +416,24 @@ class Booking extends BaseModel
             }
             if (isset($confirmation['required_documents'])) {
                 $confirmation['required_documents'] = json_decode($confirmation['required_documents'], true);
+            }
+            
+            // Ensure all required fields are present with fallbacks for frontend compatibility
+            // client_name: Use combined name if not already set
+            if (empty($confirmation['client_name']) || $confirmation['client_name'] === null) {
+                $firstName = trim($confirmation['first_name'] ?? '');
+                $lastName = trim($confirmation['last_name'] ?? '');
+                $confirmation['client_name'] = trim($firstName . ' ' . $lastName) ?: 'N/A';
+            }
+            
+            // client_phone: Use phone_no if client_phone is not set
+            if (empty($confirmation['client_phone']) || $confirmation['client_phone'] === null) {
+                $confirmation['client_phone'] = $confirmation['phone_no'] ?? 'N/A';
+            }
+            
+            // counter_number: Use counter_id if counter_number is not set
+            if (empty($confirmation['counter_number']) || $confirmation['counter_number'] === null) {
+                $confirmation['counter_number'] = (string)($confirmation['counter_id'] ?? 'N/A');
             }
         }
 
