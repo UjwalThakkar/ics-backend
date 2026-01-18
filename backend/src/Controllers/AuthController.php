@@ -654,6 +654,109 @@ class AuthController extends BaseController
     }
 
     /**
+     * Forgot password - send OTP to email
+     * POST /auth/forgot-password
+     */
+    public function forgotPassword(array $data, array $params): array
+    {
+        $data = $this->sanitize($data);
+
+        $missing = $this->validateRequired($data, ['email']);
+        if (!empty($missing)) {
+            return $this->error('Email is required', 400);
+        }
+
+        try {
+            $email = trim(strtolower($data['email']));
+            
+            // Check if user exists
+            $user = $this->userModel->findByEmail($email);
+            if (!$user) {
+                // Don't reveal if email exists or not (security best practice)
+                return $this->success([
+                    'message' => 'If an account exists with this email, a password reset code has been sent.'
+                ]);
+            }
+
+            // Send password reset OTP
+            $result = $this->otpService->sendPasswordResetOtp(
+                $email,
+                $user['first_name'],
+                $user['last_name']
+            );
+
+            if (!$result['success']) {
+                return $this->error($result['error'] ?? 'Failed to send password reset code', 500);
+            }
+
+            return $this->success([
+                'message' => 'Password reset code sent to your email',
+                'expiresAt' => $result['expiresAt']
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Forgot password error: " . $e->getMessage());
+            return $this->error('Failed to process password reset request', 500);
+        }
+    }
+
+    /**
+     * Reset password - verify OTP and set new password
+     * POST /auth/reset-password
+     */
+    public function resetPassword(array $data, array $params): array
+    {
+        $data = $this->sanitize($data);
+
+        $missing = $this->validateRequired($data, ['email', 'otp', 'newPassword']);
+        if (!empty($missing)) {
+            return $this->error('Missing required fields: ' . implode(', ', $missing), 400);
+        }
+
+        try {
+            $email = trim(strtolower($data['email']));
+            
+            // Verify OTP first
+            $otpVerification = $this->otpService->verifyPasswordResetOtp($email, $data['otp']);
+            if (!$otpVerification['success']) {
+                return $this->error($otpVerification['error'] ?? 'Invalid or expired OTP', 400);
+            }
+
+            // Validate new password strength
+            if (strlen($data['newPassword']) < 8) {
+                return $this->error('Password must be at least 8 characters long', 400);
+            }
+
+            // Find user
+            $user = $this->userModel->findByEmail($email);
+            if (!$user) {
+                return $this->error('User not found', 404);
+            }
+
+            // Update password
+            $success = $this->userModel->updatePassword((int)$user['user_id'], $data['newPassword']);
+
+            if ($success) {
+                // Log user activity
+                $this->logService->logUserActivity(
+                    (string)$user['user_id'],
+                    'PASSWORD_RESET',
+                    [],
+                    $this->getClientIp(),
+                    $this->getUserAgent()
+                );
+
+                return $this->success(['message' => 'Password reset successfully']);
+            }
+
+            return $this->error('Failed to reset password', 500);
+        } catch (\Exception $e) {
+            error_log("Reset password error: " . $e->getMessage());
+            return $this->error('Failed to reset password', 500);
+        }
+    }
+
+    /**
      * Logout - clears auth cookies
      * POST /auth/logout
      */

@@ -38,6 +38,8 @@ class Router
             'GET /auth/me' => [AuthController::class, 'me'],
             'PUT /auth/profile' => [AuthController::class, 'updateProfile'],
             'POST /auth/change-password' => [AuthController::class, 'changePassword'],
+            'POST /auth/forgot-password' => [AuthController::class, 'forgotPassword'],
+            'POST /auth/reset-password' => [AuthController::class, 'resetPassword'],
             'POST /auth/verify-email' => [AuthController::class, 'verifyEmail'],
 
             // =============================================
