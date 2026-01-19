@@ -206,7 +206,6 @@ class CounterController extends BaseController
                 'counter_name' => $data['counter_name'],
                 'service_handled' => json_encode($data['service_handled'] ?? []),
                 'is_active' => isset($data['is_active']) ? (int)(bool)$data['is_active'] : 1,
-                'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 

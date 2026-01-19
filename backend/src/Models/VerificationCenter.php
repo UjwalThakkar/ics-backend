@@ -264,7 +264,7 @@ class VerificationCenter extends BaseModel
     }
 
     /**
-     * Get all centers with their counter count
+     * Get all centers with their counter count (including inactive centers for admin)
      */
     public function getAllCentersWithCounterCount(): array
     {
@@ -273,9 +273,8 @@ class VerificationCenter extends BaseModel
                     COUNT(c.counter_id) as counter_count
                 FROM verification_center vc
                 LEFT JOIN counter c ON vc.center_id = c.center_id AND c.is_active = 1
-                WHERE vc.is_active = 1
                 GROUP BY vc.center_id
-                ORDER BY vc.display_order ASC, vc.name ASC";
+                ORDER BY vc.is_active DESC, vc.display_order ASC, vc.name ASC";
 
         $stmt = $this->query($sql);
         return $stmt->fetchAll();
